@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
-import { FaSearch, FaUser, FaFilm, FaTv, FaHome, FaBars, FaTimes } from 'react-icons/fa';
+import { FaSearch, FaUser, FaFilm, FaTv, FaHome, FaBars, FaTimes, FaCompass } from 'react-icons/fa';
 
 const Navbar = ({ user }) => {
   const [searchKey, setSearchKey] = useState('');
@@ -22,7 +22,7 @@ const Navbar = ({ user }) => {
       <div className="navbar-container">
         <Link to="/" className="navbar-logo">
           <span className="logo-icon">🎬</span>
-          <span className="logo-text">WatchList</span>
+          <span className="logo-text">Flixary</span>
         </Link>
 
         <button className="mobile-menu-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
@@ -33,6 +33,9 @@ const Navbar = ({ user }) => {
           <div className="nav-links">
             <Link to="/" className="nav-link" onClick={() => setMobileMenuOpen(false)}>
               <FaHome /> Ana Sayfa
+            </Link>
+            <Link to="/discover" className="nav-link" onClick={() => setMobileMenuOpen(false)}>
+              <FaCompass /> Keşfet
             </Link>
             <Link to="/movies" className="nav-link" onClick={() => setMobileMenuOpen(false)}>
               <FaFilm /> Filmler

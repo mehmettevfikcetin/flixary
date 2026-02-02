@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { db, auth } from '../firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, getDocs } from 'firebase/firestore';
 import axios from 'axios';
@@ -13,8 +13,13 @@ const IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
 const BACKDROP_PATH = "https://image.tmdb.org/t/p/original";
 
 const MediaDetail = () => {
-  const { type, id } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // URL path'inden type'ı belirle
+  const type = location.pathname.startsWith('/movie') ? 'movie' : 'tv';
+  
   const [media, setMedia] = useState(null);
   const [credits, setCredits] = useState({ cast: [], crew: [] });
   const [similar, setSimilar] = useState([]);
@@ -33,7 +38,7 @@ const MediaDetail = () => {
   const fetchMediaDetails = async () => {
     try {
       setLoading(true);
-      const mediaType = type === 'series' ? 'tv' : type;
+      const mediaType = type;
       
       // Ana detaylar
       const { data: mediaData } = await axios.get(

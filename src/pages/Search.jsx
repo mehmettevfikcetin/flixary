@@ -4,10 +4,50 @@ import axios from 'axios';
 import { db, auth } from '../firebase';
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import MediaCard from '../components/MediaCard';
-import FilterBar from '../components/FilterBar';
-import { FaSearch, FaSpinner } from 'react-icons/fa';
+import { FaSearch, FaSpinner, FaFilter, FaTimes } from 'react-icons/fa';
 
 const API_KEY = "44b7633393c97b1370a03d9a7414f7b1";
+
+const GENRES = {
+  movie: [
+    { id: 28, name: 'Aksiyon' },
+    { id: 12, name: 'Macera' },
+    { id: 16, name: 'Animasyon' },
+    { id: 35, name: 'Komedi' },
+    { id: 80, name: 'Suç' },
+    { id: 99, name: 'Belgesel' },
+    { id: 18, name: 'Drama' },
+    { id: 10751, name: 'Aile' },
+    { id: 14, name: 'Fantastik' },
+    { id: 36, name: 'Tarih' },
+    { id: 27, name: 'Korku' },
+    { id: 10402, name: 'Müzik' },
+    { id: 9648, name: 'Gizem' },
+    { id: 10749, name: 'Romantik' },
+    { id: 878, name: 'Bilim Kurgu' },
+    { id: 53, name: 'Gerilim' },
+    { id: 10752, name: 'Savaş' },
+    { id: 37, name: 'Western' },
+  ],
+  tv: [
+    { id: 10759, name: 'Aksiyon & Macera' },
+    { id: 16, name: 'Animasyon' },
+    { id: 35, name: 'Komedi' },
+    { id: 80, name: 'Suç' },
+    { id: 99, name: 'Belgesel' },
+    { id: 18, name: 'Drama' },
+    { id: 10751, name: 'Aile' },
+    { id: 10762, name: 'Çocuk' },
+    { id: 9648, name: 'Gizem' },
+    { id: 10763, name: 'Haber' },
+    { id: 10764, name: 'Reality' },
+    { id: 10765, name: 'Bilim Kurgu & Fantazi' },
+    { id: 10766, name: 'Pembe Dizi' },
+    { id: 10767, name: 'Talk Show' },
+    { id: 10768, name: 'Savaş & Politik' },
+    { id: 37, name: 'Western' },
+  ]
+};
 
 const Search = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -20,6 +60,13 @@ const Search = () => {
   const [userList, setUserList] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  
+  // Filtreler
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedGenre, setSelectedGenre] = useState('');
+  const [selectedYear, setSelectedYear] = useState('');
+  const [minRating, setMinRating] = useState('');
+  const [sortBy, setSortBy] = useState('popularity.desc');
 
   useEffect(() => {
     if (initialQuery) {
@@ -52,8 +99,8 @@ const Search = () => {
     }
   };
 
-  const performSearch = async (query, pageNum = 1) => {
-    if (!query.trim()) return;
+  const performSearch = async (queryText, pageNum = 1) => {
+    if (!queryText.trim()) return;
     
     setLoading(true);
     try {
@@ -62,7 +109,7 @@ const Search = () => {
       const { data } = await axios.get(endpoint, {
         params: {
           api_key: API_KEY,
-          query: query,
+          query: queryText,
           language: 'tr-TR',
           page: pageNum
         }
@@ -75,6 +122,9 @@ const Search = () => {
           item => item.media_type === 'movie' || item.media_type === 'tv'
         );
       }
+
+      // Filtreleri uygula
+      filteredResults = applyFilters(filteredResults);
 
       if (pageNum === 1) {
         setResults(filteredResults);
@@ -91,6 +141,60 @@ const Search = () => {
     }
   };
 
+  const applyFilters = (items) => {
+    let filtered = [...items];
+    
+    // Tür filtresi
+    if (selectedGenre) {
+      filtered = filtered.filter(item => 
+        item.genre_ids?.includes(parseInt(selectedGenre))
+      );
+    }
+    
+    // Yıl filtresi
+    if (selectedYear) {
+      filtered = filtered.filter(item => {
+        const date = item.release_date || item.first_air_date;
+        return date?.startsWith(selectedYear);
+      });
+    }
+    
+    // Puan filtresi
+    if (minRating) {
+      filtered = filtered.filter(item => 
+        item.vote_average >= parseFloat(minRating)
+      );
+    }
+    
+    // Sıralama
+    if (sortBy) {
+      filtered.sort((a, b) => {
+        switch (sortBy) {
+          case 'popularity.desc':
+            return (b.popularity || 0) - (a.popularity || 0);
+          case 'popularity.asc':
+            return (a.popularity || 0) - (b.popularity || 0);
+          case 'vote_average.desc':
+            return (b.vote_average || 0) - (a.vote_average || 0);
+          case 'vote_average.asc':
+            return (a.vote_average || 0) - (b.vote_average || 0);
+          case 'release_date.desc':
+            const dateB = b.release_date || b.first_air_date || '';
+            const dateA = a.release_date || a.first_air_date || '';
+            return dateB.localeCompare(dateA);
+          case 'release_date.asc':
+            const dateA2 = a.release_date || a.first_air_date || '';
+            const dateB2 = b.release_date || b.first_air_date || '';
+            return dateA2.localeCompare(dateB2);
+          default:
+            return 0;
+        }
+      });
+    }
+    
+    return filtered;
+  };
+
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchKey.trim()) {
@@ -101,6 +205,23 @@ const Search = () => {
 
   const handleTypeChange = (type) => {
     setSearchType(type);
+    setSelectedGenre('');
+    if (searchKey.trim()) {
+      performSearch(searchKey, 1);
+    }
+  };
+
+  const handleApplyFilters = () => {
+    if (searchKey.trim()) {
+      performSearch(searchKey, 1);
+    }
+  };
+
+  const handleClearFilters = () => {
+    setSelectedGenre('');
+    setSelectedYear('');
+    setMinRating('');
+    setSortBy('popularity.desc');
     if (searchKey.trim()) {
       performSearch(searchKey, 1);
     }
@@ -164,6 +285,15 @@ const Search = () => {
     }
   };
 
+  // Yıl seçenekleri
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 50 }, (_, i) => currentYear - i);
+
+  // Aktif tür için türler
+  const genreList = searchType === 'movie' ? GENRES.movie : 
+                    searchType === 'tv' ? GENRES.tv : 
+                    [...GENRES.movie]; // multi için film türlerini kullan
+
   return (
     <div className="search-page">
       <div className="search-header">
@@ -200,8 +330,88 @@ const Search = () => {
           >
             📺 Diziler
           </button>
+          <button 
+            className={`filter-toggle ${showFilters ? 'active' : ''}`}
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <FaFilter /> Filtreler
+          </button>
         </div>
       </div>
+
+      {/* Filtre Paneli */}
+      {showFilters && (
+        <div className="search-filters">
+          <div className="filter-item">
+            <label>Tür</label>
+            <select 
+              className="filter-select"
+              value={selectedGenre} 
+              onChange={(e) => setSelectedGenre(e.target.value)}
+            >
+              <option value="">Tüm Türler</option>
+              {genreList.map(genre => (
+                <option key={genre.id} value={genre.id}>{genre.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-item">
+            <label>Yıl</label>
+            <select 
+              className="filter-select"
+              value={selectedYear} 
+              onChange={(e) => setSelectedYear(e.target.value)}
+            >
+              <option value="">Tüm Yıllar</option>
+              {yearOptions.map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-item">
+            <label>Minimum Puan</label>
+            <select 
+              className="filter-select"
+              value={minRating} 
+              onChange={(e) => setMinRating(e.target.value)}
+            >
+              <option value="">Hepsi</option>
+              <option value="9">9+ Muhteşem</option>
+              <option value="8">8+ Çok İyi</option>
+              <option value="7">7+ İyi</option>
+              <option value="6">6+ Ortalama</option>
+              <option value="5">5+ Vasat</option>
+            </select>
+          </div>
+
+          <div className="filter-item">
+            <label>Sıralama</label>
+            <select 
+              className="filter-select"
+              value={sortBy} 
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              <option value="popularity.desc">En Popüler</option>
+              <option value="popularity.asc">En Az Popüler</option>
+              <option value="vote_average.desc">En Yüksek Puan</option>
+              <option value="vote_average.asc">En Düşük Puan</option>
+              <option value="release_date.desc">En Yeni</option>
+              <option value="release_date.asc">En Eski</option>
+            </select>
+          </div>
+
+          <div className="filter-actions">
+            <button className="filter-apply-btn" onClick={handleApplyFilters}>
+              Uygula
+            </button>
+            <button className="filter-clear-btn" onClick={handleClearFilters}>
+              <FaTimes /> Temizle
+            </button>
+          </div>
+        </div>
+      )}
 
       {loading && results.length === 0 ? (
         <div className="loading-container">

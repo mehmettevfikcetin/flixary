@@ -47,6 +47,7 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/lists" element={<Profile />} />
             <Route path="/search" element={<Search />} />
+            <Route path="/discover" element={<Discover />} />
             <Route path="/movies" element={<Discover type="movie" />} />
             <Route path="/series" element={<Discover type="tv" />} />
             <Route path="/movie/:id" element={<MediaDetail />} />
