@@ -1,0 +1,460 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { db, auth } from '../firebase';
+import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { Link } from 'react-router-dom';
+import { FaStar, FaEdit, FaTrash, FaEye, FaCheck, FaCalendar, FaPause, FaTimes } from 'react-icons/fa';
+import FilterBar from '../components/FilterBar';
+import RatingModal from '../components/RatingModal';
+import StatusModal from '../components/StatusModal';
+import StatsCard from '../components/StatsCard';
+
+const IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
+
+const Profile = () => {
+  const [watchlist, setWatchlist] = useState([]);
+  const [filters, setFilters] = useState({ 
+    type: 'all', 
+    status: 'all', 
+    sort: 'addedDesc',
+    genre: '',
+    year: '',
+    minRating: ''
+  });
+  const [activeTab, setActiveTab] = useState('all');
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [viewMode, setViewMode] = useState('grid'); // grid or list
+
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    
+    const q = query(
+      collection(db, "watchlist"),
+      where("uid", "==", auth.currentUser.uid)
+    );
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const items = [];
+      snapshot.forEach((doc) => items.push({ ...doc.data(), docId: doc.id }));
+      setWatchlist(items);
+    });
+    
+    return () => unsubscribe();
+  }, []);
+
+  // İstatistikleri hesapla
+  const stats = useMemo(() => {
+    const totalMovies = watchlist.filter(i => i.mediaType === 'movie').length;
+    const totalSeries = watchlist.filter(i => i.mediaType === 'tv').length;
+    const watchingCount = watchlist.filter(i => i.status === 'watching').length;
+    const completedCount = watchlist.filter(i => i.status === 'completed').length;
+    const plannedCount = watchlist.filter(i => i.status === 'planned').length;
+    const droppedCount = watchlist.filter(i => i.status === 'dropped').length;
+    const onholdCount = watchlist.filter(i => i.status === 'onhold').length;
+    
+    // İzleme süresi (film dakika + dizi bölüm * 45dk tahmini)
+    const completedMovies = watchlist.filter(i => i.status === 'completed' && i.mediaType === 'movie');
+    const completedSeries = watchlist.filter(i => i.status === 'completed' && i.mediaType === 'tv');
+    const movieTime = completedMovies.reduce((acc, m) => acc + (m.runtime || 120), 0);
+    const seriesTime = completedSeries.reduce((acc, s) => acc + ((s.episodeCount || 10) * 45), 0);
+    const totalWatchTime = movieTime + seriesTime;
+    
+    // Ortalama puan
+    const ratedItems = watchlist.filter(i => i.userRating);
+    const averageRating = ratedItems.length 
+      ? ratedItems.reduce((acc, i) => acc + i.userRating, 0) / ratedItems.length 
+      : 0;
+
+    // Tür dağılımı
+    const genreCounts = {};
+    watchlist.forEach(item => {
+      item.genres?.forEach(genreId => {
+        genreCounts[genreId] = (genreCounts[genreId] || 0) + 1;
+      });
+    });
+
+    const genreNames = {
+      28: 'Aksiyon', 12: 'Macera', 16: 'Animasyon', 35: 'Komedi', 
+      80: 'Suç', 99: 'Belgesel', 18: 'Drama', 10751: 'Aile', 
+      14: 'Fantastik', 36: 'Tarih', 27: 'Korku', 10402: 'Müzik',
+      9648: 'Gizem', 10749: 'Romantik', 878: 'Bilim Kurgu', 
+      53: 'Gerilim', 10752: 'Savaş', 37: 'Western'
+    };
+
+    const genreDistribution = Object.entries(genreCounts)
+      .map(([id, count]) => ({ id, name: genreNames[id] || 'Diğer', count }))
+      .sort((a, b) => b.count - a.count);
+
+    return {
+      totalMovies,
+      totalSeries,
+      watchingCount,
+      completedCount,
+      plannedCount,
+      droppedCount,
+      onholdCount,
+      totalWatchTime,
+      averageRating,
+      totalRated: ratedItems.length,
+      genreDistribution
+    };
+  }, [watchlist]);
+
+  // Filtrelenmiş liste
+  const filteredList = useMemo(() => {
+    let result = [...watchlist];
+    
+    // Tip filtresi
+    if (filters.type !== 'all') {
+      result = result.filter(i => i.mediaType === filters.type);
+    }
+    
+    // Durum filtresi (tab veya dropdown)
+    const statusFilter = activeTab !== 'all' ? activeTab : filters.status;
+    if (statusFilter !== 'all') {
+      result = result.filter(i => i.status === statusFilter);
+    }
+    
+    // Tür filtresi
+    if (filters.genre) {
+      result = result.filter(i => i.genres?.includes(parseInt(filters.genre)));
+    }
+    
+    // Yıl filtresi
+    if (filters.year) {
+      result = result.filter(i => {
+        const year = i.releaseDate ? new Date(i.releaseDate).getFullYear() : null;
+        return year === parseInt(filters.year);
+      });
+    }
+    
+    // Minimum puan filtresi
+    if (filters.minRating) {
+      result = result.filter(i => i.rating >= parseFloat(filters.minRating));
+    }
+    
+    // Sıralama
+    switch (filters.sort) {
+      case 'addedDesc':
+        result.sort((a, b) => new Date(b.createdAt?.toDate?.() || b.createdAt) - new Date(a.createdAt?.toDate?.() || a.createdAt));
+        break;
+      case 'addedAsc':
+        result.sort((a, b) => new Date(a.createdAt?.toDate?.() || a.createdAt) - new Date(b.createdAt?.toDate?.() || b.createdAt));
+        break;
+      case 'ratingDesc':
+        result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        break;
+      case 'ratingAsc':
+        result.sort((a, b) => (a.rating || 0) - (b.rating || 0));
+        break;
+      case 'userRatingDesc':
+        result.sort((a, b) => (b.userRating || 0) - (a.userRating || 0));
+        break;
+      case 'userRatingAsc':
+        result.sort((a, b) => (a.userRating || 0) - (b.userRating || 0));
+        break;
+      case 'titleAsc':
+        result.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+        break;
+      case 'titleDesc':
+        result.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
+        break;
+      case 'yearDesc':
+        result.sort((a, b) => {
+          const yearA = a.releaseDate ? new Date(a.releaseDate).getFullYear() : 0;
+          const yearB = b.releaseDate ? new Date(b.releaseDate).getFullYear() : 0;
+          return yearB - yearA;
+        });
+        break;
+      case 'yearAsc':
+        result.sort((a, b) => {
+          const yearA = a.releaseDate ? new Date(a.releaseDate).getFullYear() : 0;
+          const yearB = b.releaseDate ? new Date(b.releaseDate).getFullYear() : 0;
+          return yearA - yearB;
+        });
+        break;
+      default:
+        break;
+    }
+    
+    return result;
+  }, [watchlist, filters, activeTab]);
+
+  const updateItem = async (updates) => {
+    if (!selectedItem?.docId) return;
+    try {
+      await updateDoc(doc(db, "watchlist", selectedItem.docId), {
+        ...updates,
+        updatedAt: new Date()
+      });
+    } catch (error) {
+      console.error("Güncelleme hatası:", error);
+    }
+  };
+
+  const deleteItem = async (item) => {
+    if (!confirm(`"${item.title}" listeden kaldırılsın mı?`)) return;
+    try {
+      await deleteDoc(doc(db, "watchlist", item.docId));
+    } catch (error) {
+      console.error("Silme hatası:", error);
+    }
+  };
+
+  const statusIcons = {
+    watching: <FaEye />,
+    completed: <FaCheck />,
+    planned: <FaCalendar />,
+    onhold: <FaPause />,
+    dropped: <FaTimes />
+  };
+
+  const statusLabels = {
+    watching: 'İzleniyor',
+    completed: 'Tamamlandı',
+    planned: 'Planlandı',
+    onhold: 'Beklemede',
+    dropped: 'Bırakıldı'
+  };
+
+  const statusColors = {
+    watching: '#3498db',
+    completed: '#2ecc71',
+    planned: '#9b59b6',
+    onhold: '#f39c12',
+    dropped: '#e74c3c'
+  };
+
+  const user = auth.currentUser;
+
+  return (
+    <div className="profile-page">
+      {/* Profil Header */}
+      <div className="profile-header">
+        <div className="profile-banner"></div>
+        <div className="profile-info">
+          <img 
+            src={user?.photoURL || 'https://via.placeholder.com/120'} 
+            alt="Avatar" 
+            className="profile-avatar"
+          />
+          <div className="profile-details">
+            <h1>{user?.displayName || 'Kullanıcı'}</h1>
+            <p className="profile-email">{user?.email}</p>
+            <p className="profile-joined">
+              Katılım: {user?.metadata?.creationTime 
+                ? new Date(user.metadata.creationTime).toLocaleDateString('tr-TR')
+                : 'N/A'
+              }
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* İstatistikler */}
+      <StatsCard stats={stats} />
+
+      {/* Durum Sekmeleri */}
+      <div className="status-tabs">
+        <button 
+          className={activeTab === 'all' ? 'active' : ''} 
+          onClick={() => setActiveTab('all')}
+        >
+          📋 Tümü ({watchlist.length})
+        </button>
+        <button 
+          className={activeTab === 'watching' ? 'active' : ''} 
+          onClick={() => setActiveTab('watching')}
+        >
+          👁️ İzleniyor ({stats.watchingCount})
+        </button>
+        <button 
+          className={activeTab === 'completed' ? 'active' : ''} 
+          onClick={() => setActiveTab('completed')}
+        >
+          ✅ Tamamlandı ({stats.completedCount})
+        </button>
+        <button 
+          className={activeTab === 'planned' ? 'active' : ''} 
+          onClick={() => setActiveTab('planned')}
+        >
+          📅 Planlandı ({stats.plannedCount})
+        </button>
+        <button 
+          className={activeTab === 'onhold' ? 'active' : ''} 
+          onClick={() => setActiveTab('onhold')}
+        >
+          ⏸️ Beklemede ({stats.onholdCount})
+        </button>
+        <button 
+          className={activeTab === 'dropped' ? 'active' : ''} 
+          onClick={() => setActiveTab('dropped')}
+        >
+          ❌ Bırakıldı ({stats.droppedCount})
+        </button>
+      </div>
+
+      {/* Filtreler */}
+      <FilterBar 
+        filters={filters} 
+        setFilters={setFilters}
+        showStatusFilter={false}
+      />
+
+      {/* Görünüm Değiştirici */}
+      <div className="view-controls">
+        <button 
+          className={viewMode === 'grid' ? 'active' : ''} 
+          onClick={() => setViewMode('grid')}
+        >
+          🔲 Izgara
+        </button>
+        <button 
+          className={viewMode === 'list' ? 'active' : ''} 
+          onClick={() => setViewMode('list')}
+        >
+          📝 Liste
+        </button>
+        <span className="result-count">{filteredList.length} sonuç</span>
+      </div>
+
+      {/* Liste */}
+      {filteredList.length === 0 ? (
+        <div className="empty-state">
+          <h3>Liste boş</h3>
+          <p>Henüz bu kategoride bir şey yok.</p>
+          <Link to="/" className="btn-explore">Keşfet</Link>
+        </div>
+      ) : viewMode === 'grid' ? (
+        <div className="watchlist-grid">
+          {filteredList.map(item => (
+            <div key={item.docId} className="watchlist-card">
+              <Link to={`/${item.mediaType}/${item.tmdbId}`} className="card-image">
+                <img 
+                  src={item.poster ? IMAGE_PATH + item.poster : 'https://via.placeholder.com/200x300?text=No+Image'} 
+                  alt={item.title}
+                  loading="lazy"
+                />
+                <div 
+                  className="status-indicator" 
+                  style={{ backgroundColor: statusColors[item.status] }}
+                />
+                {item.userRating && (
+                  <div className="user-rating-badge">
+                    <FaStar /> {item.userRating}
+                  </div>
+                )}
+              </Link>
+              <div className="card-content">
+                <Link to={`/${item.mediaType}/${item.tmdbId}`} className="card-title">
+                  {item.title}
+                </Link>
+                <div className="card-meta">
+                  <span className="media-type">
+                    {item.mediaType === 'movie' ? '🎬' : '📺'}
+                  </span>
+                  <span className="tmdb-rating">
+                    ⭐ {item.rating?.toFixed(1) || 'N/A'}
+                  </span>
+                </div>
+                <div className="card-actions">
+                  <button 
+                    className="btn-edit"
+                    onClick={() => { setSelectedItem(item); setShowStatusModal(true); }}
+                  >
+                    <FaEdit />
+                  </button>
+                  <button 
+                    className="btn-rate"
+                    onClick={() => { setSelectedItem(item); setShowRatingModal(true); }}
+                  >
+                    <FaStar />
+                  </button>
+                  <button 
+                    className="btn-delete"
+                    onClick={() => deleteItem(item)}
+                  >
+                    <FaTrash />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="watchlist-list">
+          {filteredList.map(item => (
+            <div key={item.docId} className="watchlist-list-item">
+              <Link to={`/${item.mediaType}/${item.tmdbId}`} className="list-item-poster">
+                <img 
+                  src={item.poster ? IMAGE_PATH + item.poster : 'https://via.placeholder.com/60x90?text=No'} 
+                  alt={item.title}
+                />
+              </Link>
+              <div className="list-item-info">
+                <Link to={`/${item.mediaType}/${item.tmdbId}`} className="list-item-title">
+                  {item.title}
+                </Link>
+                <div className="list-item-meta">
+                  <span>{item.mediaType === 'movie' ? 'Film' : 'Dizi'}</span>
+                  <span>⭐ {item.rating?.toFixed(1) || 'N/A'}</span>
+                  {item.releaseDate && (
+                    <span>{new Date(item.releaseDate).getFullYear()}</span>
+                  )}
+                </div>
+              </div>
+              <div 
+                className="list-item-status"
+                style={{ color: statusColors[item.status] }}
+              >
+                {statusIcons[item.status]} {statusLabels[item.status]}
+              </div>
+              <div className="list-item-rating">
+                {item.userRating ? (
+                  <span className="rated"><FaStar /> {item.userRating}/10</span>
+                ) : (
+                  <span className="not-rated">Puanlanmadı</span>
+                )}
+              </div>
+              <div className="list-item-actions">
+                <button onClick={() => { setSelectedItem(item); setShowStatusModal(true); }}>
+                  <FaEdit />
+                </button>
+                <button onClick={() => { setSelectedItem(item); setShowRatingModal(true); }}>
+                  <FaStar />
+                </button>
+                <button onClick={() => deleteItem(item)}>
+                  <FaTrash />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modallar */}
+      <RatingModal
+        isOpen={showRatingModal}
+        onClose={() => { setShowRatingModal(false); setSelectedItem(null); }}
+        onSave={(rating) => updateItem({ userRating: rating })}
+        currentRating={selectedItem?.userRating || 0}
+        title={selectedItem?.title || ''}
+      />
+
+      <StatusModal
+        isOpen={showStatusModal}
+        onClose={() => { setShowStatusModal(false); setSelectedItem(null); }}
+        onSave={(data) => updateItem(data)}
+        currentStatus={selectedItem?.status}
+        currentProgress={selectedItem?.progress || 0}
+        currentNotes={selectedItem?.notes || ''}
+        title={selectedItem?.title || ''}
+        totalEpisodes={selectedItem?.episodeCount}
+        mediaType={selectedItem?.mediaType || 'movie'}
+      />
+    </div>
+  );
+};
+
+export default Profile;
