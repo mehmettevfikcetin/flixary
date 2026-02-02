@@ -1,17 +1,31 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { db, auth } from '../firebase';
-import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, addDoc, getDocs } from 'firebase/firestore';
-import { Link } from 'react-router-dom';
-import { FaStar, FaEdit, FaTrash, FaEye, FaCheck, FaCalendar, FaPause, FaTimes, FaPlus, FaListUl } from 'react-icons/fa';
+import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, addDoc, getDoc, setDoc } from 'firebase/firestore';
+import { Link, useNavigate } from 'react-router-dom';
+import { FaStar, FaEdit, FaTrash, FaEye, FaCheck, FaCalendar, FaPause, FaTimes, FaPlus, FaListUl, FaCamera, FaUserFriends } from 'react-icons/fa';
 import FilterBar from '../components/FilterBar';
 import RatingModal from '../components/RatingModal';
 import StatusModal from '../components/StatusModal';
 import StatsCard from '../components/StatsCard';
+import ConfirmModal from '../components/ConfirmModal';
 import { showToast } from '../components/Toast';
+
+const BANNER_PLACEHOLDER = "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1200&h=300&fit=crop";
+const BANNER_OPTIONS = [
+  "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1200&h=300&fit=crop",
+  "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=1200&h=300&fit=crop",
+  "https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=1200&h=300&fit=crop",
+  "https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=1200&h=300&fit=crop",
+  "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=1200&h=300&fit=crop",
+  "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=1200&h=300&fit=crop",
+  "https://images.unsplash.com/photo-1594909122845-11baa439b7bf?w=1200&h=300&fit=crop",
+  "https://images.unsplash.com/photo-1542204165-65bf26472b9b?w=1200&h=300&fit=crop"
+];
 
 const IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
 
 const Profile = () => {
+  const navigate = useNavigate();
   const [watchlist, setWatchlist] = useState([]);
   const [filters, setFilters] = useState({ 
     type: 'all', 
@@ -34,6 +48,14 @@ const Profile = () => {
   const [newListEmoji, setNewListEmoji] = useState('📋');
   const [newListColor, setNewListColor] = useState('#6366f1');
   const [activeListTab, setActiveListTab] = useState('watchlist'); // 'watchlist' or list id
+  
+  // Confirm modal
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmData, setConfirmData] = useState(null);
+  
+  // Banner
+  const [userBanner, setUserBanner] = useState(BANNER_PLACEHOLDER);
+  const [showBannerModal, setShowBannerModal] = useState(false);
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -98,14 +120,55 @@ const Profile = () => {
   };
 
   // Özel listeyi sil
-  const deleteCustomList = async (listId, listName) => {
-    if (!confirm(`"${listName}" listesi silinsin mi?`)) return;
+  const handleDeleteList = (listId, listName) => {
+    setConfirmData({
+      title: 'Listeyi Sil',
+      message: `"${listName}" listesi ve içindeki tüm öğeler kalıcı olarak silinecek. Devam etmek istiyor musunuz?`,
+      onConfirm: () => deleteCustomList(listId)
+    });
+    setShowConfirmModal(true);
+  };
+
+  const deleteCustomList = async (listId) => {
     try {
       await deleteDoc(doc(db, "customLists", listId));
       showToast('Liste silindi', 'success');
       if (activeListTab === listId) setActiveListTab('watchlist');
     } catch (error) {
       showToast('Liste silinemedi', 'error');
+    }
+    setShowConfirmModal(false);
+  };
+
+  // Kullanıcı banner'ını yükle
+  useEffect(() => {
+    const fetchUserBanner = async () => {
+      if (!auth.currentUser) return;
+      try {
+        const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+        if (userDoc.exists() && userDoc.data().bannerURL) {
+          setUserBanner(userDoc.data().bannerURL);
+        }
+      } catch (error) {
+        console.error("Banner yüklenemedi:", error);
+      }
+    };
+    fetchUserBanner();
+  }, []);
+
+  // Banner'ı güncelle
+  const updateBanner = async (bannerURL) => {
+    try {
+      await setDoc(doc(db, "users", auth.currentUser.uid), {
+        bannerURL: bannerURL,
+        updatedAt: new Date()
+      }, { merge: true });
+      setUserBanner(bannerURL);
+      showToast('Banner güncellendi!', 'success');
+      setShowBannerModal(false);
+    } catch (error) {
+      console.error("Banner güncellenemedi:", error);
+      showToast('Banner güncellenemedi', 'error');
     }
   };
 
@@ -261,8 +324,16 @@ const Profile = () => {
     }
   };
 
+  const handleDeleteItem = (item) => {
+    setConfirmData({
+      title: 'Listeden Kaldır',
+      message: `"${item.title}" listeden kaldırılsın mı?`,
+      onConfirm: () => deleteItem(item)
+    });
+    setShowConfirmModal(true);
+  };
+
   const deleteItem = async (item) => {
-    if (!confirm(`"${item.title}" listeden kaldırılsın mı?`)) return;
     try {
       await deleteDoc(doc(db, "watchlist", item.docId));
       showToast('Listeden kaldırıldı', 'success');
@@ -270,6 +341,12 @@ const Profile = () => {
       console.error("Silme hatası:", error);
       showToast('Silme başarısız', 'error');
     }
+    setShowConfirmModal(false);
+  };
+
+  // Özel liste detay sayfasına git
+  const openCustomList = (listId) => {
+    navigate(`/list/${listId}`);
   };
 
   const statusIcons = {
@@ -302,7 +379,18 @@ const Profile = () => {
     <div className="profile-page">
       {/* Profil Header */}
       <div className="profile-header">
-        <div className="profile-banner"></div>
+        <div 
+          className="profile-banner"
+          style={{ backgroundImage: `url(${userBanner})` }}
+        >
+          <button 
+            className="banner-edit-btn"
+            onClick={() => setShowBannerModal(true)}
+            title="Banner Değiştir"
+          >
+            <FaCamera /> Banner Değiştir
+          </button>
+        </div>
         <div className="profile-info">
           <img 
             src={user?.photoURL || 'https://via.placeholder.com/120'} 
@@ -318,6 +406,9 @@ const Profile = () => {
                 : 'N/A'
               }
             </p>
+            <Link to="/users" className="find-friends-btn">
+              <FaUserFriends /> Kullanıcı Ara
+            </Link>
           </div>
         </div>
       </div>
@@ -382,8 +473,8 @@ const Profile = () => {
             {customLists.map(list => (
               <div 
                 key={list.id} 
-                className={`custom-list-card ${activeListTab === list.id ? 'active' : ''}`}
-                onClick={() => setActiveListTab(list.id)}
+                className="custom-list-card"
+                onClick={() => openCustomList(list.id)}
                 style={{ '--list-color': list.color }}
               >
                 <span className="list-emoji">{list.emoji}</span>
@@ -391,7 +482,7 @@ const Profile = () => {
                 <span className="list-count">{list.itemCount || 0}</span>
                 <button 
                   className="btn-delete-list"
-                  onClick={(e) => { e.stopPropagation(); deleteCustomList(list.id, list.name); }}
+                  onClick={(e) => { e.stopPropagation(); handleDeleteList(list.id, list.name); }}
                 >
                   <FaTrash />
                 </button>
@@ -479,7 +570,7 @@ const Profile = () => {
                   </button>
                   <button 
                     className="btn-delete"
-                    onClick={() => deleteItem(item)}
+                    onClick={() => handleDeleteItem(item)}
                   >
                     <FaTrash />
                   </button>
@@ -530,7 +621,7 @@ const Profile = () => {
                 <button onClick={() => { setSelectedItem(item); setShowRatingModal(true); }}>
                   <FaStar />
                 </button>
-                <button onClick={() => deleteItem(item)}>
+                <button onClick={() => handleDeleteItem(item)}>
                   <FaTrash />
                 </button>
               </div>
@@ -616,6 +707,65 @@ const Profile = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Banner Seçme Modalı */}
+      {showBannerModal && (
+        <div className="modal-overlay" onClick={() => setShowBannerModal(false)}>
+          <div className="modal-content banner-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowBannerModal(false)}>
+              <FaTimes />
+            </button>
+            
+            <h3><FaCamera /> Banner Seç</h3>
+            <p className="modal-subtitle">Profiliniz için bir arka plan görseli seçin</p>
+            
+            <div className="banner-options-grid">
+              {BANNER_OPTIONS.map((banner, index) => (
+                <button
+                  key={index}
+                  className={`banner-option ${userBanner === banner ? 'active' : ''}`}
+                  onClick={() => updateBanner(banner)}
+                >
+                  <img src={banner} alt={`Banner ${index + 1}`} />
+                </button>
+              ))}
+            </div>
+            
+            <div className="custom-banner-input">
+              <label>Veya özel URL girin:</label>
+              <div className="url-input-group">
+                <input
+                  type="url"
+                  placeholder="https://example.com/image.jpg"
+                  id="customBannerUrl"
+                />
+                <button 
+                  className="btn-apply"
+                  onClick={() => {
+                    const url = document.getElementById('customBannerUrl').value;
+                    if (url) updateBanner(url);
+                  }}
+                >
+                  Uygula
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Modal */}
+      {showConfirmModal && confirmData && (
+        <ConfirmModal
+          isOpen={showConfirmModal}
+          title={confirmData.title}
+          message={confirmData.message}
+          onConfirm={confirmData.onConfirm}
+          onCancel={() => setShowConfirmModal(false)}
+          type="danger"
+          confirmText="Evet, Sil"
+        />
       )}
     </div>
   );

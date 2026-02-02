@@ -10,6 +10,8 @@ import Search from './pages/Search';
 import Discover from './pages/Discover';
 import MediaDetail from './pages/MediaDetail';
 import Settings from './pages/Settings';
+import CustomListDetail from './pages/CustomListDetail';
+import UserSearch, { UserProfile } from './pages/UserSearch';
 import { ToastContainer } from './components/Toast';
 import './App.css';
 
@@ -53,6 +55,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/lists" element={<Profile />} />
+            <Route path="/list/:listId" element={<CustomListDetail />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/search" element={<Search />} />
             <Route path="/discover" element={<Discover />} />
@@ -60,6 +63,8 @@ function App() {
             <Route path="/series" element={<Discover type="tv" />} />
             <Route path="/movie/:id" element={<MediaDetail />} />
             <Route path="/tv/:id" element={<MediaDetail />} />
+            <Route path="/users" element={<UserSearch />} />
+            <Route path="/user/:userId" element={<UserProfile />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

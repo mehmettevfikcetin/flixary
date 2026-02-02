@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
-import { FaSearch, FaUser, FaFilm, FaTv, FaHome, FaBars, FaTimes, FaCompass, FaSignOutAlt, FaCog } from 'react-icons/fa';
+import { FaSearch, FaUser, FaFilm, FaTv, FaHome, FaBars, FaTimes, FaCompass, FaSignOutAlt, FaCog, FaUserFriends } from 'react-icons/fa';
 
 const Navbar = ({ user }) => {
   const [searchKey, setSearchKey] = useState('');
@@ -123,6 +123,9 @@ const Navbar = ({ user }) => {
                 <Link to="/profile" onClick={() => setShowUserDropdown(false)}>
                   📋 Listelerim
                 </Link>
+                <Link to="/users" onClick={() => setShowUserDropdown(false)}>
+                  <FaUserFriends /> Kullanıcı Ara
+                </Link>
                 <Link to="/settings" onClick={() => setShowUserDropdown(false)}>
                   <FaCog /> Ayarlar
                 </Link>
@@ -186,6 +189,9 @@ const Navbar = ({ user }) => {
                   <div className="mobile-nav-divider"></div>
                   <Link to="/profile" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
                     <FaUser /> Profilim
+                  </Link>
+                  <Link to="/users" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                    <FaUserFriends /> Kullanıcı Ara
                   </Link>
                   <Link to="/settings" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
                     <FaCog /> Ayarlar

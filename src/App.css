@@ -4659,3 +4659,1029 @@ button {
     text-align: center;
   }
 }
+
+/* ===================================
+   CONFIRM MODAL
+   =================================== */
+.confirm-modal {
+  max-width: 400px;
+  text-align: center;
+}
+
+.confirm-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.confirm-message {
+  color: var(--text-secondary);
+  margin: 0.5rem 0 1.5rem;
+  line-height: 1.5;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.confirm-actions button {
+  flex: 1;
+  max-width: 150px;
+}
+
+.btn-confirm {
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+  color: white;
+}
+
+.btn-confirm.btn-warning {
+  background: #f59e0b;
+}
+
+.btn-confirm.btn-danger {
+  background: #ef4444;
+}
+
+.btn-confirm.btn-info {
+  background: #3b82f6;
+}
+
+/* ===================================
+   PROFILE BANNER
+   =================================== */
+.profile-banner {
+  position: relative;
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.profile-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 50%, var(--bg-primary) 100%);
+}
+
+.banner-edit-btn {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 10;
+  padding: 0.5rem 1rem;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: var(--transition);
+  opacity: 0;
+}
+
+.profile-banner:hover .banner-edit-btn {
+  opacity: 1;
+}
+
+.banner-edit-btn:hover {
+  background: var(--accent-primary);
+}
+
+/* Banner Modal */
+.banner-modal {
+  max-width: 600px;
+}
+
+.banner-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.banner-option {
+  position: relative;
+  aspect-ratio: 4/1;
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition: var(--transition);
+  padding: 0;
+  background: none;
+}
+
+.banner-option img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.banner-option:hover {
+  border-color: var(--accent-primary);
+  transform: scale(1.02);
+}
+
+.banner-option.active {
+  border-color: var(--accent-green);
+}
+
+.banner-option.active::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--accent-green);
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.custom-banner-input {
+  border-top: 1px solid var(--border-color);
+  padding-top: 1rem;
+  margin-top: 1rem;
+}
+
+.custom-banner-input label {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.url-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.url-input-group input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.url-input-group .btn-apply {
+  padding: 0.75rem 1rem;
+  background: var(--accent-primary);
+  color: white;
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+
+/* Find Friends Button */
+.find-friends-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-tertiary);
+  color: var(--accent-primary);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  transition: var(--transition);
+}
+
+.find-friends-btn:hover {
+  background: var(--accent-primary);
+  color: white;
+}
+
+/* ===================================
+   CUSTOM LIST DETAIL PAGE
+   =================================== */
+.custom-list-detail-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.list-detail-header {
+  margin-bottom: 2rem;
+}
+
+.list-detail-header .back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  transition: var(--transition);
+}
+
+.list-detail-header .back-btn:hover {
+  color: var(--accent-primary);
+}
+
+.list-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.list-emoji-large {
+  font-size: 3rem;
+  background: var(--bg-secondary);
+  padding: 1rem;
+  border-radius: var(--radius-lg);
+  border-left: 4px solid var(--list-color);
+}
+
+.list-meta h1 {
+  font-size: 1.8rem;
+  margin-bottom: 0.25rem;
+}
+
+.list-meta p {
+  color: var(--text-muted);
+}
+
+/* List Filters */
+.list-detail-filters {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.list-detail-filters .filter-group {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.list-detail-filters .search-box {
+  position: relative;
+}
+
+.list-detail-filters .search-box input {
+  padding: 0.75rem 1rem;
+  padding-right: 2.5rem;
+  width: 250px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+}
+
+.list-detail-filters .search-box input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+.list-detail-filters .clear-search {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  color: var(--text-muted);
+  padding: 0.25rem;
+}
+
+.list-detail-filters select {
+  padding: 0.75rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+/* List Items Grid */
+.list-items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1.5rem;
+}
+
+.list-item-card {
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: var(--transition);
+}
+
+.list-item-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.item-poster {
+  position: relative;
+  display: block;
+  aspect-ratio: 2/3;
+}
+
+.item-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.item-poster .media-type-badge {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.item-info {
+  padding: 0.75rem;
+}
+
+.item-title {
+  display: block;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.5rem;
+  transition: var(--transition);
+}
+
+.item-title:hover {
+  color: var(--accent-primary);
+}
+
+.item-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.item-actions button {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  transition: var(--transition);
+}
+
+.btn-move {
+  background: var(--bg-tertiary);
+  color: var(--accent-primary);
+}
+
+.btn-move:hover {
+  background: var(--accent-primary);
+  color: white;
+}
+
+.btn-remove {
+  background: var(--bg-tertiary);
+  color: var(--accent-red);
+}
+
+.btn-remove:hover {
+  background: var(--accent-red);
+  color: white;
+}
+
+/* Empty List State */
+.empty-list-state {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.empty-list-state .empty-icon {
+  font-size: 4rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.empty-list-state h3 {
+  margin-bottom: 0.5rem;
+}
+
+.empty-list-state p {
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.empty-list-state .btn-explore {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background: var(--accent-primary);
+  color: white;
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+
+/* Move Modal */
+.move-modal {
+  max-width: 450px;
+}
+
+.target-lists {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.target-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+}
+
+.target-list-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.target-list-info .list-emoji {
+  font-size: 1.2rem;
+}
+
+.target-list-info .list-name {
+  font-weight: 500;
+}
+
+.target-list-info .list-count {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.target-list-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.target-list-actions button {
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.btn-copy {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-copy:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.btn-move-to {
+  background: var(--accent-primary);
+  color: white;
+}
+
+.no-lists-message {
+  text-align: center;
+  padding: 2rem;
+}
+
+.no-lists-message p {
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.no-lists-message .btn-create {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background: var(--accent-primary);
+  color: white;
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+
+/* ===================================
+   USER SEARCH PAGE
+   =================================== */
+.user-search-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.user-search-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.user-search-header h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.user-search-header p {
+  color: var(--text-muted);
+}
+
+.user-search-box {
+  margin-bottom: 3rem;
+}
+
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 50px;
+  padding: 0.25rem;
+  transition: var(--transition);
+}
+
+.search-input-wrapper:focus-within {
+  border-color: var(--accent-primary);
+}
+
+.search-input-wrapper .search-icon {
+  margin-left: 1rem;
+  color: var(--text-muted);
+}
+
+.search-input-wrapper input {
+  flex: 1;
+  padding: 1rem;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 1rem;
+  outline: none;
+}
+
+.search-input-wrapper .btn-search {
+  padding: 0.75rem 1.5rem;
+  background: var(--accent-primary);
+  color: white;
+  border-radius: 50px;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.search-input-wrapper .btn-search:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Search Results */
+.no-results {
+  text-align: center;
+  padding: 3rem;
+}
+
+.no-results-icon {
+  font-size: 3rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.user-results-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.user-result-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  transition: var(--transition);
+  border: 1px solid transparent;
+}
+
+.user-result-card:hover {
+  border-color: var(--accent-primary);
+  background: var(--bg-tertiary);
+}
+
+.user-result-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+}
+
+.user-result-info {
+  flex: 1;
+}
+
+.user-result-info h4 {
+  margin-bottom: 0.25rem;
+}
+
+.user-result-bio {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.view-profile-btn {
+  padding: 0.5rem 1rem;
+  background: var(--accent-primary);
+  color: white;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Search Tips */
+.search-tips {
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+}
+
+.search-tips h3 {
+  margin-bottom: 1rem;
+}
+
+.search-tips ul {
+  list-style: none;
+}
+
+.search-tips li {
+  padding: 0.5rem 0;
+  color: var(--text-secondary);
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.search-tips li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--accent-primary);
+}
+
+/* ===================================
+   USER PROFILE PAGE
+   =================================== */
+.user-profile-page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.user-profile-header {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.user-banner {
+  height: 250px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.user-banner .banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 30%, var(--bg-primary) 100%);
+}
+
+.user-profile-info {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5rem;
+  padding: 0 2rem;
+  margin-top: -60px;
+}
+
+.user-avatar-large {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid var(--bg-primary);
+  object-fit: cover;
+}
+
+.user-details h1 {
+  font-size: 1.8rem;
+  margin-bottom: 0.25rem;
+}
+
+.user-bio {
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.btn-edit-profile {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  transition: var(--transition);
+}
+
+.btn-edit-profile:hover {
+  background: var(--accent-primary);
+  color: white;
+}
+
+/* User Stats Bar */
+.user-stats-bar {
+  display: flex;
+  justify-content: center;
+  gap: 3rem;
+  padding: 1.5rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  margin: 0 2rem 2rem;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* User Custom Lists */
+.user-custom-lists-section {
+  padding: 0 2rem;
+  margin-bottom: 2rem;
+}
+
+.user-custom-lists-section h3 {
+  margin-bottom: 1rem;
+}
+
+.user-lists-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.user-list-chip {
+  padding: 0.5rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 50px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  transition: var(--transition);
+}
+
+.user-list-chip:hover {
+  border-color: var(--list-color, var(--accent-primary));
+  color: var(--text-primary);
+}
+
+.user-list-chip.active {
+  background: var(--list-color, var(--accent-primary));
+  border-color: var(--list-color, var(--accent-primary));
+  color: white;
+}
+
+/* User Status Tabs */
+.user-status-tabs {
+  margin: 0 2rem 2rem;
+}
+
+/* User Watchlist Grid */
+.user-watchlist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1.5rem;
+  padding: 0 2rem;
+}
+
+.user-watchlist-card {
+  display: block;
+  transition: var(--transition);
+}
+
+.user-watchlist-card:hover {
+  transform: translateY(-4px);
+}
+
+.user-watchlist-card .card-poster {
+  position: relative;
+  aspect-ratio: 2/3;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.user-watchlist-card .card-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-watchlist-card .status-indicator {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.user-watchlist-card .user-rating-badge {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #fbbf24;
+}
+
+.user-watchlist-card .card-info {
+  padding: 0.5rem 0;
+}
+
+.user-watchlist-card .card-title {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+
+.user-watchlist-card .card-type {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Error Container */
+.error-container {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.error-container h2 {
+  margin-bottom: 1rem;
+}
+
+.error-container .btn-back {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background: var(--accent-primary);
+  color: white;
+  border-radius: var(--radius);
+}
+
+/* ===================================
+   RESPONSIVE - NEW COMPONENTS
+   =================================== */
+@media (max-width: 768px) {
+  .custom-list-detail-page {
+    padding: 1rem;
+  }
+  
+  .list-info {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .list-detail-filters {
+    flex-direction: column;
+  }
+  
+  .list-detail-filters .search-box input {
+    width: 100%;
+  }
+  
+  .list-items-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1rem;
+  }
+  
+  .banner-options-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .user-profile-info {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 0 1rem;
+  }
+  
+  .user-stats-bar {
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin: 0 1rem 2rem;
+  }
+  
+  .user-custom-lists-section,
+  .user-status-tabs,
+  .user-watchlist-grid {
+    padding: 0 1rem;
+  }
+  
+  .user-search-page {
+    padding: 1rem;
+  }
+  
+  .search-input-wrapper {
+    flex-direction: column;
+    border-radius: var(--radius);
+    padding: 0.5rem;
+  }
+  
+  .search-input-wrapper .search-icon {
+    display: none;
+  }
+  
+  .search-input-wrapper input {
+    text-align: center;
+  }
+  
+  .search-input-wrapper .btn-search {
+    width: 100%;
+    border-radius: var(--radius);
+  }
+  
+  .user-result-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .user-result-avatar {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .profile-banner {
+    height: 150px;
+  }
+  
+  .banner-edit-btn {
+    opacity: 1;
+    font-size: 0.75rem;
+    padding: 0.4rem 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .list-items-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .user-watchlist-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .target-list-item {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .target-list-actions {
+    width: 100%;
+  }
+  
+  .target-list-actions button {
+    flex: 1;
+  }
+}
