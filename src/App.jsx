@@ -9,6 +9,7 @@ import Profile from './pages/Profile';
 import Search from './pages/Search';
 import Discover from './pages/Discover';
 import MediaDetail from './pages/MediaDetail';
+import Settings from './pages/Settings';
 import { ToastContainer } from './components/Toast';
 import './App.css';
 
@@ -52,6 +53,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/lists" element={<Profile />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/search" element={<Search />} />
             <Route path="/discover" element={<Discover />} />
             <Route path="/movies" element={<Discover type="movie" />} />

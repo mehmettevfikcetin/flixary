@@ -1,13 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
-import { FaSearch, FaUser, FaFilm, FaTv, FaHome, FaBars, FaTimes, FaCompass, FaSignOutAlt } from 'react-icons/fa';
+import { FaSearch, FaUser, FaFilm, FaTv, FaHome, FaBars, FaTimes, FaCompass, FaSignOutAlt, FaCog } from 'react-icons/fa';
 
 const Navbar = ({ user }) => {
   const [searchKey, setSearchKey] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const dropdownRef = useRef(null);
   const navigate = useNavigate();
+
+  // Dışarı tıklandığında dropdown'u kapat
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowUserDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -16,6 +29,16 @@ const Navbar = ({ user }) => {
       setSearchKey('');
       setMobileMenuOpen(false);
       setShowMobileSearch(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      setShowUserDropdown(false);
+      setMobileMenuOpen(false);
+    } catch (error) {
+      console.error("Çıkış hatası:", error);
     }
   };
 
@@ -60,7 +83,6 @@ const Navbar = ({ user }) => {
 
         {/* Mobile Controls */}
         <div className="mobile-controls">
-          {/* Mobile Search Toggle */}
           <button 
             className="mobile-search-btn"
             onClick={() => setShowMobileSearch(!showMobileSearch)}
@@ -68,7 +90,6 @@ const Navbar = ({ user }) => {
             <FaSearch />
           </button>
           
-          {/* Mobile Menu Toggle */}
           <button 
             className="mobile-menu-btn" 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -77,23 +98,40 @@ const Navbar = ({ user }) => {
           </button>
         </div>
 
-        {/* User Avatar - Desktop */}
+        {/* User Avatar - Desktop with Click Dropdown */}
         {user && (
-          <div className="navbar-user desktop-user">
-            <Link to="/profile" className="user-avatar">
+          <div className="navbar-user desktop-user" ref={dropdownRef}>
+            <button 
+              className="user-avatar-btn"
+              onClick={() => setShowUserDropdown(!showUserDropdown)}
+            >
               <img src={user.photoURL || 'https://via.placeholder.com/40'} alt="Avatar" />
-            </Link>
-            <div className="user-dropdown">
-              <Link to="/profile">
-                <FaUser /> Profilim
-              </Link>
-              <Link to="/lists">
-                📋 Listelerim
-              </Link>
-              <button onClick={() => auth.signOut()}>
-                <FaSignOutAlt /> Çıkış Yap
-              </button>
-            </div>
+            </button>
+            {showUserDropdown && (
+              <div className="user-dropdown show">
+                <div className="dropdown-user-info">
+                  <img src={user.photoURL || 'https://via.placeholder.com/40'} alt="Avatar" />
+                  <div>
+                    <span className="dropdown-user-name">{user.displayName || 'Kullanıcı'}</span>
+                    <span className="dropdown-user-email">{user.email}</span>
+                  </div>
+                </div>
+                <div className="dropdown-divider"></div>
+                <Link to="/profile" onClick={() => setShowUserDropdown(false)}>
+                  <FaUser /> Profilim
+                </Link>
+                <Link to="/profile" onClick={() => setShowUserDropdown(false)}>
+                  📋 Listelerim
+                </Link>
+                <Link to="/settings" onClick={() => setShowUserDropdown(false)}>
+                  <FaCog /> Ayarlar
+                </Link>
+                <div className="dropdown-divider"></div>
+                <button onClick={handleLogout} className="logout-btn">
+                  <FaSignOutAlt /> Çıkış Yap
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -117,44 +155,50 @@ const Navbar = ({ user }) => {
       )}
 
       {/* Mobile Menu */}
-      <div className={`mobile-menu ${mobileMenuOpen ? 'active' : ''}`}>
-        <div className="mobile-menu-content">
-          {user && (
-            <div className="mobile-user-info">
-              <img src={user.photoURL || 'https://via.placeholder.com/50'} alt="Avatar" />
-              <div>
-                <span className="user-name">{user.displayName}</span>
-                <span className="user-email">{user.email}</span>
-              </div>
-            </div>
-          )}
-          
-          <div className="mobile-nav-links">
-            <Link to="/" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
-              <FaHome /> Ana Sayfa
-            </Link>
-            <Link to="/discover" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
-              <FaCompass /> Keşfet
-            </Link>
-            <Link to="/movies" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
-              <FaFilm /> Filmler
-            </Link>
-            <Link to="/series" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
-              <FaTv /> Diziler
-            </Link>
+      {mobileMenuOpen && (
+        <div className="mobile-menu active">
+          <div className="mobile-menu-content">
             {user && (
-              <>
-                <Link to="/profile" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
-                  <FaUser /> Profilim
-                </Link>
-                <button className="mobile-nav-link logout" onClick={() => { auth.signOut(); setMobileMenuOpen(false); }}>
-                  <FaSignOutAlt /> Çıkış Yap
-                </button>
-              </>
+              <div className="mobile-user-info">
+                <img src={user.photoURL || 'https://via.placeholder.com/50'} alt="Avatar" />
+                <div>
+                  <span className="user-name">{user.displayName || 'Kullanıcı'}</span>
+                  <span className="user-email">{user.email}</span>
+                </div>
+              </div>
             )}
+            
+            <div className="mobile-nav-links">
+              <Link to="/" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                <FaHome /> Ana Sayfa
+              </Link>
+              <Link to="/discover" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                <FaCompass /> Keşfet
+              </Link>
+              <Link to="/movies" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                <FaFilm /> Filmler
+              </Link>
+              <Link to="/series" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                <FaTv /> Diziler
+              </Link>
+              {user && (
+                <>
+                  <div className="mobile-nav-divider"></div>
+                  <Link to="/profile" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                    <FaUser /> Profilim
+                  </Link>
+                  <Link to="/settings" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                    <FaCog /> Ayarlar
+                  </Link>
+                  <button className="mobile-nav-link logout" onClick={handleLogout}>
+                    <FaSignOutAlt /> Çıkış Yap
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </nav>
   );
 };

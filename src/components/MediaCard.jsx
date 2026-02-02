@@ -1,15 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaStar, FaPlus, FaCheck, FaEye, FaCalendar, FaPause, FaTimes } from 'react-icons/fa';
+import { FaStar, FaPlus, FaCheck } from 'react-icons/fa';
 
 const IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
 
 const MediaCard = ({ item, type = 'movie', onAddToList, isInList, userRating, status }) => {
-  const [showMenu, setShowMenu] = useState(false);
-  const menuRef = useRef(null);
-  
   // Anime tespiti: Japonca ve Animasyon türü
-  // TMDB'de anime genre_id 16 (Animation) ve original_language 'ja' (Japanese)
   const isAnime = (item.genre_ids?.includes(16) && item.original_language === 'ja') || 
                   (item.original_language === 'ja' && (item.genre_ids?.includes(16) || type === 'tv'));
   
@@ -32,17 +28,6 @@ const MediaCard = ({ item, type = 'movie', onAddToList, isInList, userRating, st
   
   const releaseDate = type === 'movie' ? item.release_date : item.first_air_date;
   const year = releaseDate ? new Date(releaseDate).getFullYear() : 'N/A';
-  
-  // Dışarı tıklandığında menüyü kapat
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setShowMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const statusColors = {
     watching: '#3b82f6',
@@ -60,30 +45,18 @@ const MediaCard = ({ item, type = 'movie', onAddToList, isInList, userRating, st
     onhold: 'Beklemede'
   };
 
-  const statusOptions = [
-    { value: 'watching', label: 'İzliyorum', icon: <FaEye />, color: '#3b82f6' },
-    { value: 'completed', label: 'Tamamladım', icon: <FaCheck />, color: '#10b981' },
-    { value: 'planned', label: 'Planlıyorum', icon: <FaCalendar />, color: '#8b5cf6' },
-    { value: 'onhold', label: 'Beklemede', icon: <FaPause />, color: '#f59e0b' },
-    { value: 'dropped', label: 'Bıraktım', icon: <FaTimes />, color: '#ef4444' },
-  ];
-
   const handleAddClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
     if (isInList) return;
-    setShowMenu(true);
-  };
-
-  const handleStatusSelect = (selectedStatus) => {
+    // Direkt modal açma fonksiyonunu çağır
     if (onAddToList) {
-      onAddToList(item, type, selectedStatus);
+      onAddToList(item, type);
     }
-    setShowMenu(false);
   };
 
   return (
-    <div className="media-card" ref={menuRef}>
+    <div className="media-card">
       <Link to={`/${type}/${item.id}`} className="card-image-wrapper">
         <img
           src={item.poster_path ? IMAGE_PATH + item.poster_path : 'https://via.placeholder.com/200x300?text=No+Image'}
@@ -125,23 +98,6 @@ const MediaCard = ({ item, type = 'movie', onAddToList, isInList, userRating, st
             </button>
           )}
         </div>
-
-        {showMenu && !isInList && (
-          <div className="card-dropdown" onClick={(e) => e.stopPropagation()}>
-            <div className="dropdown-header">Listeye Ekle</div>
-            {statusOptions.map((opt) => (
-              <button 
-                key={opt.value}
-                className="dropdown-item"
-                onClick={() => handleStatusSelect(opt.value)}
-                style={{ '--item-color': opt.color }}
-              >
-                <span className="dropdown-icon" style={{ color: opt.color }}>{opt.icon}</span>
-                <span>{opt.label}</span>
-              </button>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
