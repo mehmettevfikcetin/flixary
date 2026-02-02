@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { db, auth } from '../firebase';
-import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, addDoc, getDocs } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
-import { FaStar, FaEdit, FaTrash, FaEye, FaCheck, FaCalendar, FaPause, FaTimes } from 'react-icons/fa';
+import { FaStar, FaEdit, FaTrash, FaEye, FaCheck, FaCalendar, FaPause, FaTimes, FaPlus, FaListUl } from 'react-icons/fa';
 import FilterBar from '../components/FilterBar';
 import RatingModal from '../components/RatingModal';
 import StatusModal from '../components/StatusModal';
 import StatsCard from '../components/StatsCard';
+import { showToast } from '../components/Toast';
 
 const IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
 
@@ -25,6 +26,14 @@ const Profile = () => {
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [viewMode, setViewMode] = useState('grid'); // grid or list
+  
+  // Özel listeler
+  const [customLists, setCustomLists] = useState([]);
+  const [showCreateListModal, setShowCreateListModal] = useState(false);
+  const [newListName, setNewListName] = useState('');
+  const [newListEmoji, setNewListEmoji] = useState('📋');
+  const [newListColor, setNewListColor] = useState('#6366f1');
+  const [activeListTab, setActiveListTab] = useState('watchlist'); // 'watchlist' or list id
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -42,6 +51,63 @@ const Profile = () => {
     
     return () => unsubscribe();
   }, []);
+
+  // Özel listeleri çek
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    
+    const q = query(
+      collection(db, "customLists"),
+      where("uid", "==", auth.currentUser.uid)
+    );
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const lists = [];
+      snapshot.forEach((doc) => lists.push({ id: doc.id, ...doc.data() }));
+      setCustomLists(lists);
+    });
+    
+    return () => unsubscribe();
+  }, []);
+
+  // Yeni liste oluştur
+  const createCustomList = async () => {
+    if (!newListName.trim()) {
+      showToast('Liste adı boş olamaz', 'error');
+      return;
+    }
+    
+    try {
+      await addDoc(collection(db, "customLists"), {
+        uid: auth.currentUser.uid,
+        name: newListName,
+        emoji: newListEmoji,
+        color: newListColor,
+        itemCount: 0,
+        items: [],
+        createdAt: new Date()
+      });
+      showToast(`"${newListName}" listesi oluşturuldu`, 'success');
+      setNewListName('');
+      setNewListEmoji('📋');
+      setShowCreateListModal(false);
+    } catch (error) {
+      console.error("Liste oluşturma hatası:", error);
+      showToast('Liste oluşturulamadı', 'error');
+    }
+  };
+
+  // Özel listeyi sil
+  const deleteCustomList = async (listId, listName) => {
+    if (!confirm(`"${listName}" listesi silinsin mi?`)) return;
+    try {
+      await deleteDoc(doc(db, "customLists", listId));
+      showToast('Liste silindi', 'success');
+      if (activeListTab === listId) setActiveListTab('watchlist');
+    } catch (error) {
+      showToast('Liste silinemedi', 'error');
+    }
+  };
 
   // İstatistikleri hesapla
   const stats = useMemo(() => {
@@ -188,8 +254,10 @@ const Profile = () => {
         ...updates,
         updatedAt: new Date()
       });
+      showToast('Güncellendi', 'success');
     } catch (error) {
       console.error("Güncelleme hatası:", error);
+      showToast('Güncelleme başarısız', 'error');
     }
   };
 
@@ -197,8 +265,10 @@ const Profile = () => {
     if (!confirm(`"${item.title}" listeden kaldırılsın mı?`)) return;
     try {
       await deleteDoc(doc(db, "watchlist", item.docId));
+      showToast('Listeden kaldırıldı', 'success');
     } catch (error) {
       console.error("Silme hatası:", error);
+      showToast('Silme başarısız', 'error');
     }
   };
 
@@ -293,6 +363,42 @@ const Profile = () => {
         >
           ❌ Bırakıldı ({stats.droppedCount})
         </button>
+      </div>
+
+      {/* Özel Listeler Bölümü */}
+      <div className="custom-lists-section">
+        <div className="custom-lists-header">
+          <h3><FaListUl /> Listelerim</h3>
+          <button 
+            className="btn-create-list"
+            onClick={() => setShowCreateListModal(true)}
+          >
+            <FaPlus /> Yeni Liste
+          </button>
+        </div>
+        
+        {customLists.length > 0 && (
+          <div className="custom-lists-grid">
+            {customLists.map(list => (
+              <div 
+                key={list.id} 
+                className={`custom-list-card ${activeListTab === list.id ? 'active' : ''}`}
+                onClick={() => setActiveListTab(list.id)}
+                style={{ '--list-color': list.color }}
+              >
+                <span className="list-emoji">{list.emoji}</span>
+                <span className="list-name">{list.name}</span>
+                <span className="list-count">{list.itemCount || 0}</span>
+                <button 
+                  className="btn-delete-list"
+                  onClick={(e) => { e.stopPropagation(); deleteCustomList(list.id, list.name); }}
+                >
+                  <FaTrash />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Filtreler */}
@@ -453,6 +559,64 @@ const Profile = () => {
         totalEpisodes={selectedItem?.episodeCount}
         mediaType={selectedItem?.mediaType || 'movie'}
       />
+
+      {/* Liste Oluşturma Modalı */}
+      {showCreateListModal && (
+        <div className="modal-overlay" onClick={() => setShowCreateListModal(false)}>
+          <div className="modal-content create-list-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowCreateListModal(false)}>
+              <FaTimes />
+            </button>
+            
+            <h3>Yeni Liste Oluştur</h3>
+            
+            <div className="form-group">
+              <label>Liste Adı</label>
+              <input
+                type="text"
+                value={newListName}
+                onChange={(e) => setNewListName(e.target.value)}
+                placeholder="Örn: Favori Filmlerim"
+                maxLength={30}
+              />
+            </div>
+            
+            <div className="form-group">
+              <label>Emoji Seç</label>
+              <div className="emoji-picker">
+                {['📋', '🎬', '📺', '⭐', '❤️', '🔥', '🎭', '🎪', '🎯', '🏆', '💎', '🌟', '🎪', '👀', '🍿'].map(emoji => (
+                  <button
+                    key={emoji}
+                    className={`emoji-btn ${newListEmoji === emoji ? 'active' : ''}`}
+                    onClick={() => setNewListEmoji(emoji)}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="form-group">
+              <label>Renk Seç</label>
+              <div className="color-picker">
+                {['#6366f1', '#8b5cf6', '#ec4899', '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#06b6d4'].map(color => (
+                  <button
+                    key={color}
+                    className={`color-btn ${newListColor === color ? 'active' : ''}`}
+                    style={{ backgroundColor: color }}
+                    onClick={() => setNewListColor(color)}
+                  />
+                ))}
+              </div>
+            </div>
+            
+            <div className="modal-actions">
+              <button className="btn-cancel" onClick={() => setShowCreateListModal(false)}>İptal</button>
+              <button className="btn-save" onClick={createCustomList}>Oluştur</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

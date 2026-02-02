@@ -4,6 +4,7 @@ import axios from 'axios';
 import { db, auth } from '../firebase';
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import MediaCard from '../components/MediaCard';
+import { showToast } from '../components/Toast';
 import { FaSearch, FaSpinner, FaFilter, FaTimes } from 'react-icons/fa';
 
 const API_KEY = "44b7633393c97b1370a03d9a7414f7b1";
@@ -239,17 +240,20 @@ const Search = () => {
 
   const addToList = async (item, type, status = 'planned') => {
     if (!auth.currentUser) {
-      alert("Lütfen önce giriş yapın!");
+      showToast("Lütfen önce giriş yapın!", 'warning');
       return;
     }
 
     const mediaType = type === 'movie' ? 'movie' : 'tv';
-    const title = mediaType === 'movie' ? item.title : item.name;
+    const isAnime = item.genre_ids?.includes(16) || item.original_language === 'ja';
+    const title = mediaType === 'movie' 
+      ? (isAnime ? item.original_title || item.title : item.title)
+      : (isAnime ? item.original_name || item.name : item.name);
     const releaseDate = mediaType === 'movie' ? item.release_date : item.first_air_date;
 
     // Zaten listede mi kontrol et
     if (isInList(item.id, mediaType)) {
-      alert("Bu yapım zaten listenizde!");
+      showToast("Bu yapım zaten listenizde!", 'warning');
       return;
     }
 
@@ -278,10 +282,10 @@ const Search = () => {
 
       // Local listeyi güncelle
       setUserList(prev => [...prev, { tmdbId: item.id, mediaType }]);
-      alert(`"${title}" listenize eklendi!`);
+      showToast(`"${title}" listenize eklendi!`, 'success');
     } catch (error) {
       console.error("Ekleme hatası:", error);
-      alert("Bir hata oluştu!");
+      showToast("Bir hata oluştu!", 'error');
     }
   };
 

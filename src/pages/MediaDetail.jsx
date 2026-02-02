@@ -7,6 +7,7 @@ import { FaStar, FaPlay, FaClock, FaCalendar, FaPlus, FaCheck, FaEdit, FaTrash, 
 import RatingModal from '../components/RatingModal';
 import StatusModal from '../components/StatusModal';
 import MediaCard from '../components/MediaCard';
+import { showToast } from '../components/Toast';
 
 const API_KEY = "44b7633393c97b1370a03d9a7414f7b1";
 const IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
@@ -54,12 +55,26 @@ const MediaDetail = () => {
       );
       setCredits(creditsData);
 
-      // Benzer yapımlar
-      const { data: similarData } = await axios.get(
-        `https://api.themoviedb.org/3/${mediaType}/${id}/similar`,
-        { params: { api_key: API_KEY, language: 'tr-TR' } }
-      );
-      setSimilar(similarData.results.slice(0, 8));
+      // Önerilen yapımlar (recommendations daha iyi sonuç verir)
+      try {
+        const { data: recommendData } = await axios.get(
+          `https://api.themoviedb.org/3/${mediaType}/${id}/recommendations`,
+          { params: { api_key: API_KEY, language: 'tr-TR' } }
+        );
+        
+        // Eğer recommendations boşsa similar'a bak
+        if (recommendData.results.length > 0) {
+          setSimilar(recommendData.results.slice(0, 8));
+        } else {
+          const { data: similarData } = await axios.get(
+            `https://api.themoviedb.org/3/${mediaType}/${id}/similar`,
+            { params: { api_key: API_KEY, language: 'tr-TR' } }
+          );
+          setSimilar(similarData.results.slice(0, 8));
+        }
+      } catch {
+        setSimilar([]);
+      }
 
       // Videolar (fragmanlar)
       const { data: videosData } = await axios.get(
@@ -100,7 +115,11 @@ const MediaDetail = () => {
     if (!auth.currentUser || !media) return;
     
     const mediaType = type === 'series' ? 'tv' : type;
-    const title = mediaType === 'movie' ? media.title : media.name;
+    // Anime/Asya dizileri için İngilizce isim
+    const isAnime = media.genres?.some(g => g.id === 16) || media.original_language === 'ja';
+    const title = mediaType === 'movie' 
+      ? (isAnime ? media.original_title || media.title : media.title)
+      : (isAnime ? media.original_name || media.name : media.name);
     const releaseDate = mediaType === 'movie' ? media.release_date : media.first_air_date;
     
     try {
@@ -130,9 +149,10 @@ const MediaDetail = () => {
       });
       
       setUserEntry({ ...media, docId: docRef.id, status, userRating: null });
-      alert(`${title} listenize eklendi!`);
+      showToast(`"${title}" listenize eklendi!`, 'success');
     } catch (error) {
       console.error("Ekleme hatası:", error);
+      showToast('Ekleme başarısız', 'error');
     }
   };
 
@@ -144,8 +164,10 @@ const MediaDetail = () => {
         updatedAt: new Date()
       });
       setUserEntry({ ...userEntry, ...updates });
+      showToast('Güncellendi', 'success');
     } catch (error) {
       console.error("Güncelleme hatası:", error);
+      showToast('Güncelleme başarısız', 'error');
     }
   };
 
@@ -156,9 +178,10 @@ const MediaDetail = () => {
     try {
       await deleteDoc(doc(db, "watchlist", userEntry.docId));
       setUserEntry(null);
-      alert("Listeden kaldırıldı!");
+      showToast('Listeden kaldırıldı', 'success');
     } catch (error) {
       console.error("Silme hatası:", error);
+      showToast('Silme başarısız', 'error');
     }
   };
 

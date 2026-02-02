@@ -9,6 +9,7 @@ import Profile from './pages/Profile';
 import Search from './pages/Search';
 import Discover from './pages/Discover';
 import MediaDetail from './pages/MediaDetail';
+import { ToastContainer } from './components/Toast';
 import './App.css';
 
 function App() {
@@ -34,7 +35,12 @@ function App() {
 
   // Giriş yapılmamışsa Login sayfasına yönlendir
   if (!user) {
-    return <Login />;
+    return (
+      <>
+        <Login />
+        <ToastContainer />
+      </>
+    );
   }
 
   return (
@@ -55,6 +61,7 @@ function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
+        <ToastContainer />
       </div>
     </Router>
   );
