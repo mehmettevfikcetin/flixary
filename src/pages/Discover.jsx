@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { db, auth } from '../firebase';
-import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, doc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
 import MediaCard from '../components/MediaCard';
+import AddToListModal from '../components/AddToListModal';
+import { showToast } from '../components/Toast';
 import { FaFire, FaStar, FaPlay, FaCalendar } from 'react-icons/fa';
 
 const API_KEY = "44b7633393c97b1370a03d9a7414f7b1";
@@ -16,6 +18,10 @@ const Discover = ({ type = 'movie' }) => {
   const [loading, setLoading] = useState(true);
   const [activeGenre, setActiveGenre] = useState(null);
   const [genreResults, setGenreResults] = useState([]);
+  
+  // Modal state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
 
   const mediaType = type === 'series' ? 'tv' : type;
 
@@ -116,31 +122,44 @@ const Discover = ({ type = 'movie' }) => {
     return userList.some(item => item.tmdbId === tmdbId && item.mediaType === mediaType);
   };
 
-  const addToList = async (item, itemType, status = 'planned') => {
+  // Modal açma fonksiyonu
+  const openAddModal = (item, itemType) => {
     if (!auth.currentUser) {
-      alert("Lütfen önce giriş yapın!");
+      showToast("Lütfen önce giriş yapın!", "warning");
       return;
     }
-
-    const title = mediaType === 'movie' ? item.title : item.name;
-    const releaseDate = mediaType === 'movie' ? item.release_date : item.first_air_date;
-
+    
     if (isInList(item.id)) {
-      alert("Bu yapım zaten listenizde!");
+      showToast("Bu yapım zaten listenizde!", "info");
       return;
     }
+    
+    setSelectedItem(item);
+    setShowAddModal(true);
+  };
+
+  // Listeye ekleme fonksiyonu
+  const addToList = async ({ status, customListId }) => {
+    if (!selectedItem) return;
+
+    // Anime kontrolü
+    const isAnime = selectedItem.genre_ids?.includes(16) && selectedItem.original_language === 'ja';
+    const title = mediaType === 'movie' 
+      ? (isAnime ? selectedItem.original_title || selectedItem.title : selectedItem.title)
+      : (isAnime ? selectedItem.original_name || selectedItem.name : selectedItem.name);
+    const releaseDate = mediaType === 'movie' ? selectedItem.release_date : selectedItem.first_air_date;
 
     try {
-      await addDoc(collection(db, "watchlist"), {
+      const docRef = await addDoc(collection(db, "watchlist"), {
         uid: auth.currentUser.uid,
-        tmdbId: item.id,
+        tmdbId: selectedItem.id,
         mediaType: mediaType,
         title: title,
-        poster: item.poster_path,
-        backdrop: item.backdrop_path,
-        rating: item.vote_average,
+        poster: selectedItem.poster_path,
+        backdrop: selectedItem.backdrop_path,
+        rating: selectedItem.vote_average,
         releaseDate: releaseDate,
-        genres: item.genre_ids || [],
+        genres: selectedItem.genre_ids || [],
         status: status,
         userRating: null,
         progress: 0,
@@ -149,10 +168,27 @@ const Discover = ({ type = 'movie' }) => {
         updatedAt: new Date()
       });
 
-      setUserList(prev => [...prev, { tmdbId: item.id, mediaType }]);
-      alert(`"${title}" listenize eklendi!`);
+      // Özel listeye de ekle
+      if (customListId) {
+        await updateDoc(doc(db, "customLists", customListId), {
+          items: arrayUnion({
+            docId: docRef.id,
+            tmdbId: selectedItem.id,
+            mediaType: mediaType,
+            title: title,
+            poster: selectedItem.poster_path
+          }),
+          itemCount: increment(1)
+        });
+      }
+
+      setUserList(prev => [...prev, { tmdbId: selectedItem.id, mediaType }]);
+      showToast(`"${title}" listenize eklendi!`, "success");
+      setShowAddModal(false);
+      setSelectedItem(null);
     } catch (error) {
       console.error("Ekleme hatası:", error);
+      showToast("Ekleme başarısız oldu", "error");
     }
   };
 
@@ -165,7 +201,7 @@ const Discover = ({ type = 'movie' }) => {
             key={item.id}
             item={item}
             type={mediaType}
-            onAddToList={addToList}
+            onAddToList={openAddModal}
             isInList={isInList(item.id)}
           />
         ))}
@@ -219,7 +255,7 @@ const Discover = ({ type = 'movie' }) => {
                 key={item.id}
                 item={item}
                 type={mediaType}
-                onAddToList={addToList}
+                onAddToList={openAddModal}
                 isInList={isInList(item.id)}
               />
             ))}
@@ -252,6 +288,16 @@ const Discover = ({ type = 'movie' }) => {
           />
         </>
       )}
+
+      {/* Add to List Modal */}
+      <AddToListModal
+        isOpen={showAddModal}
+        onClose={() => { setShowAddModal(false); setSelectedItem(null); }}
+        onConfirm={addToList}
+        item={selectedItem}
+        type={mediaType}
+        title={mediaType === 'movie' ? selectedItem?.title : selectedItem?.name}
+      />
     </div>
   );
 };

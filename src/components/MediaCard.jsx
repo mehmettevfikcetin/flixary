@@ -8,11 +8,27 @@ const MediaCard = ({ item, type = 'movie', onAddToList, isInList, userRating, st
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
   
-  // Anime/Asya dizileri için orijinal (İngilizce) isim, diğerleri için çeviri
-  const isAnime = item.genre_ids?.includes(16) || item.original_language === 'ja';
-  const title = type === 'movie' 
-    ? (isAnime ? item.original_title || item.title : item.title)
-    : (isAnime ? item.original_name || item.name : item.name);
+  // Anime tespiti: Japonca ve Animasyon türü
+  // TMDB'de anime genre_id 16 (Animation) ve original_language 'ja' (Japanese)
+  const isAnime = (item.genre_ids?.includes(16) && item.original_language === 'ja') || 
+                  (item.original_language === 'ja' && (item.genre_ids?.includes(16) || type === 'tv'));
+  
+  // Anime için İngilizce/orijinal isim kullan, yoksa Türkçe
+  const getDisplayTitle = () => {
+    if (type === 'movie') {
+      if (isAnime && item.original_title && item.original_title !== item.title) {
+        return item.original_title;
+      }
+      return item.title || item.original_title;
+    } else {
+      if (isAnime && item.original_name && item.original_name !== item.name) {
+        return item.original_name;
+      }
+      return item.name || item.original_name;
+    }
+  };
+  
+  const title = getDisplayTitle();
   
   const releaseDate = type === 'movie' ? item.release_date : item.first_air_date;
   const year = releaseDate ? new Date(releaseDate).getFullYear() : 'N/A';

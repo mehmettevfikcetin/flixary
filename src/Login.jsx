@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { auth, googleProvider } from './firebase';
 import { signInWithPopup } from 'firebase/auth';
-import { FaGoogle, FaPlay, FaStar, FaList, FaChartBar, FaHeart, FaFilm } from 'react-icons/fa';
+import { FaGoogle, FaFilm, FaTv, FaStar, FaList, FaChartLine, FaHeart, FaPlay } from 'react-icons/fa';
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -12,100 +12,131 @@ const Login = () => {
       await signInWithPopup(auth, googleProvider);
     } catch (error) {
       console.error(error);
-      alert("Giriş yapılamadı: " + error.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const features = [
-    { icon: <FaFilm />, title: 'Takip Et', desc: 'Film ve dizilerini takip et' },
-    { icon: <FaStar />, title: 'Puanla', desc: '10 üzerinden değerlendir' },
-    { icon: <FaList />, title: 'Listele', desc: 'Özel listeler oluştur' },
-    { icon: <FaChartBar />, title: 'İstatistik', desc: 'İzleme istatistiklerini gör' },
-  ];
-
   return (
-    <div className="login-page">
+    <div className="login-page-new">
       {/* Animated Background */}
-      <div className="login-bg">
-        <div className="floating-cards">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className={`floating-card card-${i + 1}`}>
-              <div className="card-placeholder"></div>
-            </div>
-          ))}
+      <div className="login-bg-new">
+        <div className="bg-gradient"></div>
+        <div className="bg-pattern"></div>
+        <div className="floating-icons">
+          <span className="float-icon" style={{ top: '10%', left: '5%', animationDelay: '0s' }}>🎬</span>
+          <span className="float-icon" style={{ top: '20%', right: '10%', animationDelay: '1s' }}>🎭</span>
+          <span className="float-icon" style={{ top: '60%', left: '8%', animationDelay: '2s' }}>🍿</span>
+          <span className="float-icon" style={{ top: '70%', right: '5%', animationDelay: '3s' }}>📺</span>
+          <span className="float-icon" style={{ top: '40%', left: '3%', animationDelay: '4s' }}>⭐</span>
+          <span className="float-icon" style={{ top: '85%', right: '15%', animationDelay: '5s' }}>🎥</span>
         </div>
-        <div className="gradient-overlay"></div>
       </div>
 
-      <div className="login-wrapper">
-        <div className="login-content">
-          {/* Logo Section */}
-          <div className="login-logo">
-            <div className="logo-icon-large">
-              <FaPlay className="play-icon" />
+      <div className="login-container-new">
+        {/* Left Side - Branding */}
+        <div className="login-branding">
+          <div className="brand-content">
+            <div className="brand-logo">
+              <div className="logo-circle">
+                <FaPlay />
+              </div>
+              <h1>Flixary</h1>
             </div>
-            <h1>Flixary</h1>
-            <p className="tagline">Film ve Dizi Takip Platformu</p>
-          </div>
-
-          {/* Features */}
-          <div className="login-features-grid">
-            {features.map((feature, index) => (
-              <div key={index} className="feature-card">
-                <div className="feature-icon">{feature.icon}</div>
-                <div className="feature-text">
-                  <h3>{feature.title}</h3>
-                  <p>{feature.desc}</p>
+            <p className="brand-tagline">Film ve Dizi Takip Platformu</p>
+            
+            <div className="brand-features">
+              <div className="brand-feature">
+                <div className="bf-icon"><FaFilm /></div>
+                <div className="bf-text">
+                  <h4>Takip Et</h4>
+                  <p>Tüm film ve dizilerini tek yerden takip et</p>
                 </div>
               </div>
-            ))}
+              <div className="brand-feature">
+                <div className="bf-icon"><FaStar /></div>
+                <div className="bf-text">
+                  <h4>Puanla</h4>
+                  <p>İzlediklerini değerlendir ve notlar ekle</p>
+                </div>
+              </div>
+              <div className="brand-feature">
+                <div className="bf-icon"><FaList /></div>
+                <div className="bf-text">
+                  <h4>Listele</h4>
+                  <p>Özel listeler oluştur ve düzenle</p>
+                </div>
+              </div>
+              <div className="brand-feature">
+                <div className="bf-icon"><FaChartLine /></div>
+                <div className="bf-text">
+                  <h4>İstatistik</h4>
+                  <p>İzleme alışkanlıklarını analiz et</p>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
 
-          {/* Login Box */}
-          <div className="login-box">
-            <h2>Hemen Başla</h2>
-            <p>Ücretsiz hesap oluştur ve izleme deneyimini kişiselleştir</p>
-            
+        {/* Right Side - Login Form */}
+        <div className="login-form-side">
+          <div className="login-card-new">
+            <div className="login-header">
+              <h2>Hoş Geldin!</h2>
+              <p>Hesabına giriş yap veya yeni hesap oluştur</p>
+            </div>
+
             <button 
               onClick={handleGoogleLogin} 
-              className="google-btn"
+              className="google-btn-new"
               disabled={isLoading}
             >
               {isLoading ? (
-                <span className="btn-loading">
-                  <span className="spinner-small"></span>
+                <span className="btn-loading-new">
+                  <span className="spinner"></span>
                   Giriş yapılıyor...
                 </span>
               ) : (
                 <>
-                  <FaGoogle className="google-icon" />
-                  <span>Google ile Devam Et</span>
+                  <FaGoogle />
+                  <span>Google ile Giriş Yap</span>
                 </>
               )}
             </button>
 
-            <p className="guest-text">
-              <FaHeart className="heart-icon" /> Binlerce kullanıcı Flixary'i tercih ediyor
-            </p>
+            <div className="login-divider-new">
+              <span>veya</span>
+            </div>
+
+            <div className="social-proof">
+              <div className="proof-avatars">
+                <div className="avatar" style={{ background: '#3b82f6' }}>T</div>
+                <div className="avatar" style={{ background: '#8b5cf6' }}>A</div>
+                <div className="avatar" style={{ background: '#ec4899' }}>M</div>
+                <div className="avatar" style={{ background: '#10b981' }}>+</div>
+              </div>
+              <p><strong>10.000+</strong> kullanıcı Flixary'i tercih ediyor</p>
+            </div>
+
+            <div className="login-stats-new">
+              <div className="stat-item">
+                <FaFilm />
+                <span>500K+ Film</span>
+              </div>
+              <div className="stat-item">
+                <FaTv />
+                <span>100K+ Dizi</span>
+              </div>
+              <div className="stat-item">
+                <FaHeart />
+                <span>1M+ Liste</span>
+              </div>
+            </div>
           </div>
 
-          {/* Stats */}
-          <div className="login-stats">
-            <div className="stat">
-              <span className="stat-number">10K+</span>
-              <span className="stat-label">Kullanıcı</span>
-            </div>
-            <div className="stat">
-              <span className="stat-number">500K+</span>
-              <span className="stat-label">Film & Dizi</span>
-            </div>
-            <div className="stat">
-              <span className="stat-number">1M+</span>
-              <span className="stat-label">Değerlendirme</span>
-            </div>
-          </div>
+          <p className="login-footer">
+            Giriş yaparak <a href="#">Kullanım Şartları</a>'nı kabul etmiş olursunuz.
+          </p>
         </div>
       </div>
     </div>

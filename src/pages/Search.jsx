@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { db, auth } from '../firebase';
-import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, doc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
 import MediaCard from '../components/MediaCard';
+import AddToListModal from '../components/AddToListModal';
 import { showToast } from '../components/Toast';
 import { FaSearch, FaSpinner, FaFilter, FaTimes } from 'react-icons/fa';
 
@@ -68,6 +69,11 @@ const Search = () => {
   const [selectedYear, setSelectedYear] = useState('');
   const [minRating, setMinRating] = useState('');
   const [sortBy, setSortBy] = useState('popularity.desc');
+  
+  // Modal state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedItemType, setSelectedItemType] = useState('movie');
 
   useEffect(() => {
     if (initialQuery) {
@@ -238,36 +244,47 @@ const Search = () => {
     return userList.some(item => item.tmdbId === tmdbId && item.mediaType === mediaType);
   };
 
-  const addToList = async (item, type, status = 'planned') => {
+  // Modal açma fonksiyonu
+  const openAddModal = (item, type) => {
     if (!auth.currentUser) {
       showToast("Lütfen önce giriş yapın!", 'warning');
       return;
     }
 
     const mediaType = type === 'movie' ? 'movie' : 'tv';
-    const isAnime = item.genre_ids?.includes(16) || item.original_language === 'ja';
-    const title = mediaType === 'movie' 
-      ? (isAnime ? item.original_title || item.title : item.title)
-      : (isAnime ? item.original_name || item.name : item.name);
-    const releaseDate = mediaType === 'movie' ? item.release_date : item.first_air_date;
-
-    // Zaten listede mi kontrol et
+    
     if (isInList(item.id, mediaType)) {
-      showToast("Bu yapım zaten listenizde!", 'warning');
+      showToast("Bu yapım zaten listenizde!", 'info');
       return;
     }
+    
+    setSelectedItem(item);
+    setSelectedItemType(type);
+    setShowAddModal(true);
+  };
+
+  // Listeye ekleme fonksiyonu
+  const addToList = async ({ status, customListId }) => {
+    if (!selectedItem) return;
+
+    const mediaType = selectedItemType === 'movie' ? 'movie' : 'tv';
+    const isAnime = (selectedItem.genre_ids?.includes(16) && selectedItem.original_language === 'ja');
+    const title = mediaType === 'movie' 
+      ? (isAnime ? selectedItem.original_title || selectedItem.title : selectedItem.title)
+      : (isAnime ? selectedItem.original_name || selectedItem.name : selectedItem.name);
+    const releaseDate = mediaType === 'movie' ? selectedItem.release_date : selectedItem.first_air_date;
 
     try {
-      await addDoc(collection(db, "watchlist"), {
+      const docRef = await addDoc(collection(db, "watchlist"), {
         uid: auth.currentUser.uid,
-        tmdbId: item.id,
+        tmdbId: selectedItem.id,
         mediaType: mediaType,
         title: title,
-        poster: item.poster_path,
-        backdrop: item.backdrop_path,
-        rating: item.vote_average,
+        poster: selectedItem.poster_path,
+        backdrop: selectedItem.backdrop_path,
+        rating: selectedItem.vote_average,
         releaseDate: releaseDate,
-        genres: item.genre_ids || [],
+        genres: selectedItem.genre_ids || [],
         status: status,
         userRating: null,
         progress: 0,
@@ -280,9 +297,25 @@ const Search = () => {
         updatedAt: new Date()
       });
 
+      // Özel listeye de ekle
+      if (customListId) {
+        await updateDoc(doc(db, "customLists", customListId), {
+          items: arrayUnion({
+            docId: docRef.id,
+            tmdbId: selectedItem.id,
+            mediaType: mediaType,
+            title: title,
+            poster: selectedItem.poster_path
+          }),
+          itemCount: increment(1)
+        });
+      }
+
       // Local listeyi güncelle
-      setUserList(prev => [...prev, { tmdbId: item.id, mediaType }]);
+      setUserList(prev => [...prev, { tmdbId: selectedItem.id, mediaType }]);
       showToast(`"${title}" listenize eklendi!`, 'success');
+      setShowAddModal(false);
+      setSelectedItem(null);
     } catch (error) {
       console.error("Ekleme hatası:", error);
       showToast("Bir hata oluştu!", 'error');
@@ -440,7 +473,7 @@ const Search = () => {
                     key={`${type}-${item.id}`}
                     item={item}
                     type={type}
-                    onAddToList={addToList}
+                    onAddToList={openAddModal}
                     isInList={isInList(item.id, type)}
                   />
                 );
@@ -457,6 +490,16 @@ const Search = () => {
           )}
         </>
       )}
+
+      {/* Add to List Modal */}
+      <AddToListModal
+        isOpen={showAddModal}
+        onClose={() => { setShowAddModal(false); setSelectedItem(null); }}
+        onConfirm={addToList}
+        item={selectedItem}
+        type={selectedItemType}
+        title={selectedItemType === 'movie' ? selectedItem?.title : selectedItem?.name}
+      />
     </div>
   );
 };
