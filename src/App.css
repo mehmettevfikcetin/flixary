@@ -134,8 +134,8 @@ button {
 }
 
 .navbar-logo-img {
-  height: 38px;
-  width: 38px;
+  height: 50px;
+  width: 50px;
   object-fit: cover;
   object-position: center;
   border-radius: 10px;
@@ -3356,8 +3356,8 @@ button {
   }
 
   .navbar-logo-img {
-    height: 34px;
-    width: 34px;
+    height: 44px;
+    width: 44px;
   }
   
   .navbar-menu {
