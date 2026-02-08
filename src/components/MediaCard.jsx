@@ -12,10 +12,10 @@ const MediaCard = ({ item, type = 'movie', onAddToList, isInList, userRating, st
     const trTitle = type === 'movie' ? item.title : item.name;
     const origTitle = type === 'movie' ? item.original_title : item.original_name;
     
-    // Türkçe başlık varsa ve Latin harfli ise onu kullan
-    if (trTitle && isLatin(trTitle)) return trTitle;
-    // Orijinal başlık Latin harfli ise onu kullan
+    // Orijinal (İngilizce) başlık varsa ve Latin harfli ise onu kullan
     if (origTitle && isLatin(origTitle)) return origTitle;
+    // Türkçe başlık Latin harfli ise onu kullan
+    if (trTitle && isLatin(trTitle)) return trTitle;
     // Son çare: ne varsa onu göster
     return trTitle || origTitle;
   };

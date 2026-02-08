@@ -175,7 +175,10 @@ const Navbar = ({ user }) => {
             <button 
               type="button"
               className="mobile-search-btn"
-              onClick={() => setShowMobileSearch(!showMobileSearch)}
+              onClick={() => {
+                setShowMobileSearch(!showMobileSearch);
+                setMobileMenuOpen(false);
+              }}
               aria-label="Ara"
             >
               <FaSearch />
@@ -184,7 +187,10 @@ const Navbar = ({ user }) => {
             <button 
               type="button"
               className="mobile-menu-btn" 
-              onClick={toggleMobileMenu}
+              onClick={() => {
+                toggleMobileMenu();
+                setShowMobileSearch(false);
+              }}
               aria-label="Menü"
               aria-expanded={mobileMenuOpen}
             >

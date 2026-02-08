@@ -106,12 +106,13 @@ const Search = () => {
     }
   };
 
-  const performSearch = async (queryText, pageNum = 1) => {
+  const performSearch = async (queryText, pageNum = 1, typeOverride = null) => {
     if (!queryText.trim()) return;
     
+    const activeType = typeOverride || searchType;
     setLoading(true);
     try {
-      let endpoint = `https://api.themoviedb.org/3/search/${searchType}`;
+      let endpoint = `https://api.themoviedb.org/3/search/${activeType}`;
       
       const { data } = await axios.get(endpoint, {
         params: {
@@ -124,10 +125,16 @@ const Search = () => {
 
       // Multi search için sonuçları filtrele (sadece film ve dizi)
       let filteredResults = data.results;
-      if (searchType === 'multi') {
+      if (activeType === 'multi') {
         filteredResults = data.results.filter(
           item => item.media_type === 'movie' || item.media_type === 'tv'
         );
+      } else {
+        // movie veya tv aramasında API media_type döndürmez, manuel ekle
+        filteredResults = data.results.map(item => ({
+          ...item,
+          media_type: activeType
+        }));
       }
 
       // Filtreleri uygula
@@ -214,7 +221,7 @@ const Search = () => {
     setSearchType(type);
     setSelectedGenre('');
     if (searchKey.trim()) {
-      performSearch(searchKey, 1);
+      performSearch(searchKey, 1, type);
     }
   };
 
@@ -272,7 +279,7 @@ const Search = () => {
     const isLatin = (str) => /^[\u0000-\u024F\u1E00-\u1EFF\u2C60-\u2C7F\s\d\W]+$/.test(str);
     const trTitle = mediaType === 'movie' ? selectedItem.title : selectedItem.name;
     const origTitle = mediaType === 'movie' ? selectedItem.original_title : selectedItem.original_name;
-    const title = (trTitle && isLatin(trTitle)) ? trTitle : (origTitle && isLatin(origTitle)) ? origTitle : trTitle || origTitle;
+    const title = (origTitle && isLatin(origTitle)) ? origTitle : (trTitle && isLatin(trTitle)) ? trTitle : trTitle || origTitle;
     const releaseDate = mediaType === 'movie' ? selectedItem.release_date : selectedItem.first_air_date;
 
     try {

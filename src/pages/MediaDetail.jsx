@@ -120,7 +120,7 @@ const MediaDetail = () => {
     const isLatin = (str) => /^[\u0000-\u024F\u1E00-\u1EFF\u2C60-\u2C7F\s\d\W]+$/.test(str);
     const trTitle = mediaType === 'movie' ? media.title : media.name;
     const origTitle = mediaType === 'movie' ? media.original_title : media.original_name;
-    const title = (trTitle && isLatin(trTitle)) ? trTitle : (origTitle && isLatin(origTitle)) ? origTitle : trTitle || origTitle;
+    const title = (origTitle && isLatin(origTitle)) ? origTitle : (trTitle && isLatin(trTitle)) ? trTitle : trTitle || origTitle;
     const releaseDate = mediaType === 'movie' ? media.release_date : media.first_air_date;
     
     try {

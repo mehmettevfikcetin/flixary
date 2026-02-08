@@ -4155,6 +4155,7 @@ button {
   padding: 1rem;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
+  z-index: 10000;
 }
 
 .mobile-search-bar form {
