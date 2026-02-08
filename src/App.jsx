@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import Login from './Login';
 import Home from './Home';
 import Profile from './pages/Profile';
@@ -69,6 +70,7 @@ function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
+        <Footer />
         <ToastContainer />
       </div>
     </Router>
