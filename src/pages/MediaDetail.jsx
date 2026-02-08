@@ -8,8 +8,8 @@ import RatingModal from '../components/RatingModal';
 import StatusModal from '../components/StatusModal';
 import MediaCard from '../components/MediaCard';
 import { showToast } from '../components/Toast';
+import { fetchWithEnglishTitles, fetchDetailWithEnglishTitle, getTitle, API_KEY } from '../utils/tmdbUtils';
 
-const API_KEY = "44b7633393c97b1370a03d9a7414f7b1";
 const IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
 const BACKDROP_PATH = "https://image.tmdb.org/t/p/original";
 
@@ -41,11 +41,13 @@ const MediaDetail = () => {
       setLoading(true);
       const mediaType = type;
       
-      // Ana detaylar
-      const { data: mediaData } = await axios.get(
-        `https://api.themoviedb.org/3/${mediaType}/${id}`,
-        { params: { api_key: API_KEY, language: 'tr-TR' } }
+      // Ana detaylar (tr-TR + en-US paralel)
+      const { trData: mediaData, enData: enMediaData } = await fetchDetailWithEnglishTitle(
+        `https://api.themoviedb.org/3/${mediaType}/${id}`
       );
+      // İngilizce başlığı enjekte et
+      mediaData.en_title = enMediaData.title || null;
+      mediaData.en_name = enMediaData.name || null;
       setMedia(mediaData);
 
       // Oyuncular ve ekip
@@ -57,18 +59,16 @@ const MediaDetail = () => {
 
       // Önerilen yapımlar (recommendations daha iyi sonuç verir)
       try {
-        const { data: recommendData } = await axios.get(
-          `https://api.themoviedb.org/3/${mediaType}/${id}/recommendations`,
-          { params: { api_key: API_KEY, language: 'tr-TR' } }
+        const recommendData = await fetchWithEnglishTitles(
+          `https://api.themoviedb.org/3/${mediaType}/${id}/recommendations`
         );
         
         // Eğer recommendations boşsa similar'a bak
         if (recommendData.results.length > 0) {
           setSimilar(recommendData.results.slice(0, 8));
         } else {
-          const { data: similarData } = await axios.get(
-            `https://api.themoviedb.org/3/${mediaType}/${id}/similar`,
-            { params: { api_key: API_KEY, language: 'tr-TR' } }
+          const similarData = await fetchWithEnglishTitles(
+            `https://api.themoviedb.org/3/${mediaType}/${id}/similar`
           );
           setSimilar(similarData.results.slice(0, 8));
         }
@@ -115,12 +115,8 @@ const MediaDetail = () => {
     if (!auth.currentUser || !media) return;
     
     const mediaType = type === 'series' ? 'tv' : type;
-    // Anime/Asya dizileri için İngilizce isim
-    // Başlık seçimi: Latin harfi olmayan isimleri engelle
-    const isLatin = (str) => /^[\u0000-\u024F\u1E00-\u1EFF\u2C60-\u2C7F\s\d\W]+$/.test(str);
-    const trTitle = mediaType === 'movie' ? media.title : media.name;
-    const origTitle = mediaType === 'movie' ? media.original_title : media.original_name;
-    const title = (origTitle && isLatin(origTitle)) ? origTitle : (trTitle && isLatin(trTitle)) ? trTitle : trTitle || origTitle;
+    // Başlık seçimi: İngilizce > Orijinal > Türkçe
+    const title = getTitle(media, mediaType);
     const releaseDate = mediaType === 'movie' ? media.release_date : media.first_air_date;
     
     try {
@@ -213,7 +209,7 @@ const MediaDetail = () => {
   }
 
   const mediaType = type === 'series' ? 'tv' : type;
-  const title = mediaType === 'movie' ? media.title : media.name;
+  const title = getTitle(media, mediaType);
   const releaseDate = mediaType === 'movie' ? media.release_date : media.first_air_date;
   const year = releaseDate ? new Date(releaseDate).getFullYear() : 'N/A';
   const runtime = mediaType === 'movie' 

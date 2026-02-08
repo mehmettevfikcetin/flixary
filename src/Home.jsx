@@ -2,13 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { db, auth } from './firebase';
 import { collection, query, where, onSnapshot, addDoc, doc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
-import axios from 'axios';
 import MediaCard from './components/MediaCard';
 import AddToListModal from './components/AddToListModal';
 import { showToast } from './components/Toast';
+import { fetchWithEnglishTitles, getTitle, API_KEY } from './utils/tmdbUtils';
 import { FaFire, FaStar, FaFilm, FaTv, FaArrowRight, FaClock, FaChartLine } from 'react-icons/fa';
 
-const API_KEY = "44b7633393c97b1370a03d9a7414f7b1";
 const IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
 const BACKDROP_PATH = "https://image.tmdb.org/t/p/original";
 
@@ -34,23 +33,19 @@ const Home = () => {
 
   const fetchTrending = async () => {
     try {
-      const [moviesRes, seriesRes] = await Promise.all([
-        axios.get('https://api.themoviedb.org/3/trending/movie/day', {
-          params: { api_key: API_KEY, language: 'tr-TR' }
-        }),
-        axios.get('https://api.themoviedb.org/3/trending/tv/day', {
-          params: { api_key: API_KEY, language: 'tr-TR' }
-        })
+      const [moviesData, seriesData] = await Promise.all([
+        fetchWithEnglishTitles('https://api.themoviedb.org/3/trending/movie/day'),
+        fetchWithEnglishTitles('https://api.themoviedb.org/3/trending/tv/day')
       ]);
 
-      setTrendingMovies(moviesRes.data.results.slice(0, 8));
-      setTrendingSeries(seriesRes.data.results.slice(0, 8));
+      setTrendingMovies(moviesData.results.slice(0, 8));
+      setTrendingSeries(seriesData.results.slice(0, 8));
       
       // Rastgele bir featured item seç
-      const allTrending = [...moviesRes.data.results.slice(0, 5), ...seriesRes.data.results.slice(0, 5)];
+      const allTrending = [...moviesData.results.slice(0, 5), ...seriesData.results.slice(0, 5)];
       const randomIndex = Math.floor(Math.random() * allTrending.length);
       const featured = allTrending[randomIndex];
-      featured.media_type = moviesRes.data.results.includes(featured) ? 'movie' : 'tv';
+      featured.media_type = moviesData.results.includes(featured) ? 'movie' : 'tv';
       setFeaturedItem(featured);
       
     } catch (error) {
@@ -117,11 +112,8 @@ const Home = () => {
     
     const mediaType = selectedType === 'movie' ? 'movie' : 'tv';
     
-    // Başlık seçimi: Latin harfi olmayan isimleri engelle
-    const isLatin = (str) => /^[\u0000-\u024F\u1E00-\u1EFF\u2C60-\u2C7F\s\d\W]+$/.test(str);
-    const trTitle = mediaType === 'movie' ? selectedItem.title : selectedItem.name;
-    const origTitle = mediaType === 'movie' ? selectedItem.original_title : selectedItem.original_name;
-    const title = (origTitle && isLatin(origTitle)) ? origTitle : (trTitle && isLatin(trTitle)) ? trTitle : trTitle || origTitle;
+    // Başlık seçimi: İngilizce > Orijinal > Türkçe
+    const title = getTitle(selectedItem, mediaType);
     
     const releaseDate = mediaType === 'movie' ? selectedItem.release_date : selectedItem.first_air_date;
 
@@ -177,7 +169,7 @@ const Home = () => {
     );
   }
 
-  const title = featuredItem?.title || featuredItem?.name;
+  const title = featuredItem ? getTitle(featuredItem, featuredItem?.media_type) : '';
   const mediaType = featuredItem?.media_type;
 
   return (

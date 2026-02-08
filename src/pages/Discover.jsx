@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { db, auth } from '../firebase';
 import { collection, addDoc, query, where, getDocs, doc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
 import MediaCard from '../components/MediaCard';
 import AddToListModal from '../components/AddToListModal';
 import { showToast } from '../components/Toast';
+import { fetchWithEnglishTitles, getTitle, API_KEY } from '../utils/tmdbUtils';
 import { FaFire, FaStar, FaPlay, FaCalendar } from 'react-icons/fa';
-
-const API_KEY = "44b7633393c97b1370a03d9a7414f7b1";
 
 const Discover = ({ type = 'movie' }) => {
   const [trending, setTrending] = useState([]);
@@ -55,29 +53,19 @@ const Discover = ({ type = 'movie' }) => {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      const [trendingRes, popularRes, topRatedRes, upcomingRes] = await Promise.all([
-        axios.get(`https://api.themoviedb.org/3/trending/${mediaType}/week`, {
-          params: { api_key: API_KEY, language: 'tr-TR' }
-        }),
-        axios.get(`https://api.themoviedb.org/3/${mediaType}/popular`, {
-          params: { api_key: API_KEY, language: 'tr-TR' }
-        }),
-        axios.get(`https://api.themoviedb.org/3/${mediaType}/top_rated`, {
-          params: { api_key: API_KEY, language: 'tr-TR' }
-        }),
+      const [trendingData, popularData, topRatedData, upcomingData] = await Promise.all([
+        fetchWithEnglishTitles(`https://api.themoviedb.org/3/trending/${mediaType}/week`),
+        fetchWithEnglishTitles(`https://api.themoviedb.org/3/${mediaType}/popular`),
+        fetchWithEnglishTitles(`https://api.themoviedb.org/3/${mediaType}/top_rated`),
         mediaType === 'movie' 
-          ? axios.get(`https://api.themoviedb.org/3/movie/upcoming`, {
-              params: { api_key: API_KEY, language: 'tr-TR' }
-            })
-          : axios.get(`https://api.themoviedb.org/3/tv/on_the_air`, {
-              params: { api_key: API_KEY, language: 'tr-TR' }
-            })
+          ? fetchWithEnglishTitles(`https://api.themoviedb.org/3/movie/upcoming`)
+          : fetchWithEnglishTitles(`https://api.themoviedb.org/3/tv/on_the_air`)
       ]);
 
-      setTrending(trendingRes.data.results.slice(0, 10));
-      setPopular(popularRes.data.results.slice(0, 10));
-      setTopRated(topRatedRes.data.results.slice(0, 10));
-      setUpcoming(upcomingRes.data.results.slice(0, 10));
+      setTrending(trendingData.results.slice(0, 10));
+      setPopular(popularData.results.slice(0, 10));
+      setTopRated(topRatedData.results.slice(0, 10));
+      setUpcoming(upcomingData.results.slice(0, 10));
     } catch (error) {
       console.error("Veri çekme hatası:", error);
     } finally {
@@ -104,13 +92,9 @@ const Discover = ({ type = 'movie' }) => {
   const fetchByGenre = async (genreId) => {
     setActiveGenre(genreId);
     try {
-      const { data } = await axios.get(`https://api.themoviedb.org/3/discover/${mediaType}`, {
-        params: {
-          api_key: API_KEY,
-          language: 'tr-TR',
-          with_genres: genreId,
-          sort_by: 'popularity.desc'
-        }
+      const data = await fetchWithEnglishTitles(`https://api.themoviedb.org/3/discover/${mediaType}`, {
+        with_genres: genreId,
+        sort_by: 'popularity.desc'
       });
       setGenreResults(data.results);
     } catch (error) {
@@ -142,11 +126,8 @@ const Discover = ({ type = 'movie' }) => {
   const addToList = async ({ status, customListId }) => {
     if (!selectedItem) return;
 
-    // Başlık seçimi: Latin harfi olmayan isimleri engelle
-    const isLatin = (str) => /^[\u0000-\u024F\u1E00-\u1EFF\u2C60-\u2C7F\s\d\W]+$/.test(str);
-    const trTitle = mediaType === 'movie' ? selectedItem.title : selectedItem.name;
-    const origTitle = mediaType === 'movie' ? selectedItem.original_title : selectedItem.original_name;
-    const title = (origTitle && isLatin(origTitle)) ? origTitle : (trTitle && isLatin(trTitle)) ? trTitle : trTitle || origTitle;
+    // Başlık seçimi: İngilizce > Orijinal > Türkçe
+    const title = getTitle(selectedItem, mediaType);
     const releaseDate = mediaType === 'movie' ? selectedItem.release_date : selectedItem.first_air_date;
 
     try {

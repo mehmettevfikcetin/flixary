@@ -1,26 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaStar, FaPlus, FaCheck } from 'react-icons/fa';
+import { getTitle } from '../utils/tmdbUtils';
 
 const IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
 
 const MediaCard = ({ item, type = 'movie', onAddToList, isInList, userRating, status }) => {
-  // Başlık seçimi: Latin harfi olmayan isimleri engelle
-  const isLatin = (str) => /^[\u0000-\u024F\u1E00-\u1EFF\u2C60-\u2C7F\s\d\W]+$/.test(str);
-  
-  const getDisplayTitle = () => {
-    const trTitle = type === 'movie' ? item.title : item.name;
-    const origTitle = type === 'movie' ? item.original_title : item.original_name;
-    
-    // Orijinal (İngilizce) başlık varsa ve Latin harfli ise onu kullan
-    if (origTitle && isLatin(origTitle)) return origTitle;
-    // Türkçe başlık Latin harfli ise onu kullan
-    if (trTitle && isLatin(trTitle)) return trTitle;
-    // Son çare: ne varsa onu göster
-    return trTitle || origTitle;
-  };
-  
-  const title = getDisplayTitle();
+  const title = getTitle(item, type);
   
   const releaseDate = type === 'movie' ? item.release_date : item.first_air_date;
   const year = releaseDate ? new Date(releaseDate).getFullYear() : 'N/A';

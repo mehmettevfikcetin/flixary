@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import axios from 'axios';
 import { db, auth } from '../firebase';
 import { collection, addDoc, query, where, getDocs, doc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
 import MediaCard from '../components/MediaCard';
 import AddToListModal from '../components/AddToListModal';
 import { showToast } from '../components/Toast';
+import { fetchWithEnglishTitles, getTitle, API_KEY } from '../utils/tmdbUtils';
 import { FaSearch, FaSpinner, FaFilter, FaTimes } from 'react-icons/fa';
-
-const API_KEY = "44b7633393c97b1370a03d9a7414f7b1";
 
 const GENRES = {
   movie: [
@@ -112,16 +110,10 @@ const Search = () => {
     const activeType = typeOverride || searchType;
     setLoading(true);
     try {
-      let endpoint = `https://api.themoviedb.org/3/search/${activeType}`;
-      
-      const { data } = await axios.get(endpoint, {
-        params: {
-          api_key: API_KEY,
-          query: queryText,
-          language: 'tr-TR',
-          page: pageNum
-        }
-      });
+      const data = await fetchWithEnglishTitles(
+        `https://api.themoviedb.org/3/search/${activeType}`,
+        { query: queryText, page: pageNum }
+      );
 
       // Multi search için sonuçları filtrele (sadece film ve dizi)
       let filteredResults = data.results;
@@ -275,11 +267,8 @@ const Search = () => {
     if (!selectedItem) return;
 
     const mediaType = selectedItemType === 'movie' ? 'movie' : 'tv';
-    // Başlık seçimi: Latin harfi olmayan isimleri engelle
-    const isLatin = (str) => /^[\u0000-\u024F\u1E00-\u1EFF\u2C60-\u2C7F\s\d\W]+$/.test(str);
-    const trTitle = mediaType === 'movie' ? selectedItem.title : selectedItem.name;
-    const origTitle = mediaType === 'movie' ? selectedItem.original_title : selectedItem.original_name;
-    const title = (origTitle && isLatin(origTitle)) ? origTitle : (trTitle && isLatin(trTitle)) ? trTitle : trTitle || origTitle;
+    // Başlık seçimi: İngilizce > Orijinal > Türkçe
+    const title = getTitle(selectedItem, mediaType);
     const releaseDate = mediaType === 'movie' ? selectedItem.release_date : selectedItem.first_air_date;
 
     try {
