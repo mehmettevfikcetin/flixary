@@ -122,23 +122,21 @@ button {
   display: flex;
   align-items: center;
   gap: 0;
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   font-weight: 700;
   color: var(--accent-primary);
-  line-height: 50px;
-  height: 50px;
 }
 
 .navbar-logo .logo-text {
-  display: inline-block;
-  line-height: 50px;
+  display: flex;
+  align-items: center;
+  line-height: 1;
   margin: 0;
   padding: 0;
-  vertical-align: middle;
 }
 
 .navbar-logo-img {
-  height: 50px;
+  height: 60px;
   width: auto;
   object-fit: contain;
   border-radius: 8px;
@@ -3358,11 +3356,11 @@ button {
   }
   
   .navbar-logo .logo-text {
-    font-size: 1.2rem;
+    font-size: 1.3rem;
   }
 
   .navbar-logo-img {
-    height: 40px;
+    height: 48px;
   }
   
   .navbar-menu {
