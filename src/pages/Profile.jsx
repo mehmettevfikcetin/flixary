@@ -9,6 +9,7 @@ import StatusModal from '../components/StatusModal';
 import StatsCard from '../components/StatsCard';
 import ConfirmModal from '../components/ConfirmModal';
 import { showToast } from '../components/Toast';
+import { fetchTvEpisodeCount } from '../utils/tmdbUtils';
 
 // Takipçi/Takip Edilen Listesi Modal
 const FollowListModal = ({ isOpen, onClose, userId, type, title }) => {
@@ -250,6 +251,30 @@ const Profile = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
+
+  // StatusModal açılırken episode count eksikse TMDB'den çek
+  const openStatusModal = async (item) => {
+    setSelectedItem(item);
+    if (item.mediaType === 'tv' && !item.episodeCount && item.tmdbId) {
+      try {
+        const tvDetails = await fetchTvEpisodeCount(item.tmdbId);
+        if (tvDetails.episodeCount) {
+          // State'i güncelle
+          setSelectedItem(prev => ({ ...prev, episodeCount: tvDetails.episodeCount, seasonCount: tvDetails.seasonCount }));
+          // Firestore'u da güncelle
+          if (item.docId) {
+            await updateDoc(doc(db, 'watchlist', item.docId), {
+              episodeCount: tvDetails.episodeCount,
+              seasonCount: tvDetails.seasonCount
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Bölüm sayısı çekilemedi:', err);
+      }
+    }
+    setShowStatusModal(true);
+  };
   const [viewMode, setViewMode] = useState('grid'); // grid or list
   
   // Özel listeler
@@ -825,7 +850,7 @@ const Profile = () => {
                 <div className="card-actions">
                   <button 
                     className="btn-edit"
-                    onClick={() => { setSelectedItem(item); setShowStatusModal(true); }}
+                    onClick={() => openStatusModal(item)}
                     title="Düzenle"
                   >
                     <FaEdit />
@@ -892,7 +917,7 @@ const Profile = () => {
                 )}
               </div>
               <div className="list-item-actions">
-                <button onClick={() => { setSelectedItem(item); setShowStatusModal(true); }} title="Düzenle">
+                <button onClick={() => openStatusModal(item)} title="Düzenle">
                   <FaEdit />
                 </button>
                 <button onClick={() => { setSelectedItem(item); setShowRatingModal(true); }} title="Puanla">

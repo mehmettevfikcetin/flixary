@@ -35,6 +35,14 @@ const StatusModal = ({
 
   if (!isOpen) return null;
 
+  const handleStatusChange = (newStatus) => {
+    setStatus(newStatus);
+    // "Tamamladım" seçildiğinde ilerlemeyi otomatik olarak toplam bölüm sayısına ayarla
+    if (newStatus === 'completed' && totalEpisodes && mediaType === 'tv') {
+      setProgress(totalEpisodes);
+    }
+  };
+
   const statuses = [
     { value: 'watching', label: 'İzliyorum', icon: <FaEye />, color: '#3b82f6' },
     { value: 'completed', label: 'Tamamladım', icon: <FaCheck />, color: '#10b981' },
@@ -198,7 +206,7 @@ const StatusModal = ({
               key={s.value}
               className={`status-btn ${status === s.value ? 'active' : ''}`}
               style={{ '--status-color': s.color }}
-              onClick={() => setStatus(s.value)}
+              onClick={() => handleStatusChange(s.value)}
             >
               {s.icon}
               <span>{s.label}</span>

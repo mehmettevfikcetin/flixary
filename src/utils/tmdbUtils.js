@@ -78,4 +78,24 @@ export const getTitle = (item, mediaType) => {
   return enTitle || trTitle || origTitle;
 };
 
-export { API_KEY };
+/**
+ * TV dizisi için bölüm ve sezon sayısını TMDB'den çeker.
+ * Liste sayfalarında (Home, Search, Discover) ekleme sırasında kullanılır.
+ */
+const fetchTvEpisodeCount = async (tvId) => {
+  try {
+    const { data } = await axios.get(`https://api.themoviedb.org/3/tv/${tvId}`, {
+      params: { api_key: API_KEY, language: 'tr-TR' }
+    });
+    return {
+      episodeCount: data.number_of_episodes || null,
+      seasonCount: data.number_of_seasons || null,
+      runtime: null
+    };
+  } catch (error) {
+    console.error('TV detay çekme hatası:', error);
+    return { episodeCount: null, seasonCount: null, runtime: null };
+  }
+};
+
+export { API_KEY, fetchTvEpisodeCount };

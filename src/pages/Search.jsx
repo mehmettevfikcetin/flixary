@@ -272,6 +272,15 @@ const Search = () => {
     const releaseDate = mediaType === 'movie' ? selectedItem.release_date : selectedItem.first_air_date;
 
     try {
+      // Dizi ise bölüm sayısını çek
+      let episodeCount = null;
+      let seasonCount = null;
+      if (mediaType === 'tv') {
+        const tvDetails = await fetchTvEpisodeCount(selectedItem.id);
+        episodeCount = tvDetails.episodeCount;
+        seasonCount = tvDetails.seasonCount;
+      }
+
       const docRef = await addDoc(collection(db, "watchlist"), {
         uid: auth.currentUser.uid,
         tmdbId: selectedItem.id,
@@ -282,6 +291,9 @@ const Search = () => {
         rating: selectedItem.vote_average,
         releaseDate: releaseDate,
         genres: selectedItem.genre_ids || [],
+        runtime: mediaType === 'movie' ? selectedItem.runtime : null,
+        episodeCount: episodeCount,
+        seasonCount: seasonCount,
         status: status,
         userRating: null,
         progress: 0,
