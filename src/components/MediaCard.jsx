@@ -5,23 +5,19 @@ import { FaStar, FaPlus, FaCheck } from 'react-icons/fa';
 const IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
 
 const MediaCard = ({ item, type = 'movie', onAddToList, isInList, userRating, status }) => {
-  // Anime tespiti: Japonca ve Animasyon türü
-  const isAnime = (item.genre_ids?.includes(16) && item.original_language === 'ja') || 
-                  (item.original_language === 'ja' && (item.genre_ids?.includes(16) || type === 'tv'));
+  // Başlık seçimi: Latin harfi olmayan isimleri engelle
+  const isLatin = (str) => /^[\u0000-\u024F\u1E00-\u1EFF\u2C60-\u2C7F\s\d\W]+$/.test(str);
   
-  // Anime için İngilizce/orijinal isim kullan, yoksa Türkçe
   const getDisplayTitle = () => {
-    if (type === 'movie') {
-      if (isAnime && item.original_title && item.original_title !== item.title) {
-        return item.original_title;
-      }
-      return item.title || item.original_title;
-    } else {
-      if (isAnime && item.original_name && item.original_name !== item.name) {
-        return item.original_name;
-      }
-      return item.name || item.original_name;
-    }
+    const trTitle = type === 'movie' ? item.title : item.name;
+    const origTitle = type === 'movie' ? item.original_title : item.original_name;
+    
+    // Türkçe başlık varsa ve Latin harfli ise onu kullan
+    if (trTitle && isLatin(trTitle)) return trTitle;
+    // Orijinal başlık Latin harfli ise onu kullan
+    if (origTitle && isLatin(origTitle)) return origTitle;
+    // Son çare: ne varsa onu göster
+    return trTitle || origTitle;
   };
   
   const title = getDisplayTitle();

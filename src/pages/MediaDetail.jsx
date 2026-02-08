@@ -116,10 +116,11 @@ const MediaDetail = () => {
     
     const mediaType = type === 'series' ? 'tv' : type;
     // Anime/Asya dizileri için İngilizce isim
-    const isAnime = media.genres?.some(g => g.id === 16) || media.original_language === 'ja';
-    const title = mediaType === 'movie' 
-      ? (isAnime ? media.original_title || media.title : media.title)
-      : (isAnime ? media.original_name || media.name : media.name);
+    // Başlık seçimi: Latin harfi olmayan isimleri engelle
+    const isLatin = (str) => /^[\u0000-\u024F\u1E00-\u1EFF\u2C60-\u2C7F\s\d\W]+$/.test(str);
+    const trTitle = mediaType === 'movie' ? media.title : media.name;
+    const origTitle = mediaType === 'movie' ? media.original_title : media.original_name;
+    const title = (trTitle && isLatin(trTitle)) ? trTitle : (origTitle && isLatin(origTitle)) ? origTitle : trTitle || origTitle;
     const releaseDate = mediaType === 'movie' ? media.release_date : media.first_air_date;
     
     try {

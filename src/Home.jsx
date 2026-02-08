@@ -117,11 +117,11 @@ const Home = () => {
     
     const mediaType = selectedType === 'movie' ? 'movie' : 'tv';
     
-    // Anime kontrolü - orijinal isim kullan
-    const isAnime = selectedItem.genre_ids?.includes(16) || selectedItem.original_language === 'ja';
-    const title = mediaType === 'movie' 
-      ? (isAnime ? selectedItem.original_title || selectedItem.title : selectedItem.title)
-      : (isAnime ? selectedItem.original_name || selectedItem.name : selectedItem.name);
+    // Başlık seçimi: Latin harfi olmayan isimleri engelle
+    const isLatin = (str) => /^[\u0000-\u024F\u1E00-\u1EFF\u2C60-\u2C7F\s\d\W]+$/.test(str);
+    const trTitle = mediaType === 'movie' ? selectedItem.title : selectedItem.name;
+    const origTitle = mediaType === 'movie' ? selectedItem.original_title : selectedItem.original_name;
+    const title = (trTitle && isLatin(trTitle)) ? trTitle : (origTitle && isLatin(origTitle)) ? origTitle : trTitle || origTitle;
     
     const releaseDate = mediaType === 'movie' ? selectedItem.release_date : selectedItem.first_air_date;
 
