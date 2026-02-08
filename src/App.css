@@ -121,29 +121,25 @@ button {
 .navbar-logo {
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 0.4rem;
   font-size: 1.6rem;
   font-weight: 700;
   color: var(--accent-primary);
+  text-decoration: none;
 }
 
 .navbar-logo .logo-text {
-  display: flex;
-  align-items: center;
-  line-height: 1;
   margin: 0;
   padding: 0;
 }
 
 .navbar-logo-img {
-  height: 60px;
-  width: auto;
-  object-fit: contain;
-  border-radius: 8px;
-  margin-right: -8px;
-  z-index: 1;
+  height: 38px;
+  width: 38px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 10px;
   flex-shrink: 0;
-  display: block;
 }
 
 .navbar-menu {
@@ -3360,7 +3356,8 @@ button {
   }
 
   .navbar-logo-img {
-    height: 48px;
+    height: 34px;
+    width: 34px;
   }
   
   .navbar-menu {
