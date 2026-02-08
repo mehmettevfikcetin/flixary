@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { auth, googleProvider } from './firebase';
 import { signInWithPopup } from 'firebase/auth';
-import { FaGoogle, FaFilm, FaTv, FaStar, FaList, FaChartLine, FaHeart, FaPlay } from 'react-icons/fa';
+import { FaGoogle, FaFilm, FaTv, FaStar, FaList, FaChartLine, FaHeart } from 'react-icons/fa';
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -38,9 +38,7 @@ const Login = () => {
         <div className="login-branding">
           <div className="brand-content">
             <div className="brand-logo">
-              <div className="logo-circle">
-                <FaPlay />
-              </div>
+              <img src="/logo.png" alt="Flixary" className="brand-logo-img" />
               <h1>Flixary</h1>
             </div>
             <p className="brand-tagline">Film ve Dizi Takip Platformu</p>

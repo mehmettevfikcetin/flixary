@@ -11,7 +11,7 @@ import Discover from './pages/Discover';
 import MediaDetail from './pages/MediaDetail';
 import Settings from './pages/Settings';
 import CustomListDetail from './pages/CustomListDetail';
-import UserSearch, { UserProfile } from './pages/UserSearch';
+import UserSearch, { UserProfile, UserProfileByUsername } from './pages/UserSearch';
 import { ToastContainer } from './components/Toast';
 import './App.css';
 
@@ -65,6 +65,7 @@ function App() {
             <Route path="/tv/:id" element={<MediaDetail />} />
             <Route path="/users" element={<UserSearch />} />
             <Route path="/user/:userId" element={<UserProfile />} />
+            <Route path="/u/:username" element={<UserProfileByUsername />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

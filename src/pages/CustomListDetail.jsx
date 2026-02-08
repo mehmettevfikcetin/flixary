@@ -2,9 +2,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { db, auth } from '../firebase';
 import { doc, onSnapshot, updateDoc, arrayRemove, increment, getDoc, collection, query, where, getDocs, arrayUnion } from 'firebase/firestore';
-import { FaArrowLeft, FaStar, FaTrash, FaExchangeAlt, FaFilter, FaTimes, FaFilm, FaTv, FaSort } from 'react-icons/fa';
+import { FaArrowLeft, FaStar, FaTrash, FaExchangeAlt, FaFilter, FaTimes, FaFilm, FaTv, FaSort, FaEdit } from 'react-icons/fa';
 import { showToast } from '../components/Toast';
 import ConfirmModal from '../components/ConfirmModal';
+import RatingModal from '../components/RatingModal';
+import StatusModal from '../components/StatusModal';
 
 const IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
 
@@ -25,6 +27,9 @@ const CustomListDetail = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [confirmData, setConfirmData] = useState(null);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [watchlistItem, setWatchlistItem] = useState(null); // Ana listedeki karşılığı
 
   useEffect(() => {
     if (!listId || !auth.currentUser) {
@@ -209,6 +214,57 @@ const CustomListDetail = () => {
     }
   };
 
+  // Puanlama/Durum düzenleme için ana listedeki öğeyi bul
+  const openEditModal = async (item, modalType) => {
+    try {
+      // Ana listeden bu öğeyi bul
+      const q = query(
+        collection(db, "watchlist"),
+        where("uid", "==", auth.currentUser.uid),
+        where("tmdbId", "==", item.tmdbId),
+        where("mediaType", "==", item.mediaType)
+      );
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        showToast("Bu öğe ana listede bulunamadı", "warning");
+        return;
+      }
+      
+      const watchlistDoc = snapshot.docs[0];
+      setWatchlistItem({ docId: watchlistDoc.id, ...watchlistDoc.data() });
+      setSelectedItem(item);
+      
+      if (modalType === 'rating') {
+        setShowRatingModal(true);
+      } else {
+        setShowStatusModal(true);
+      }
+    } catch (error) {
+      console.error("Öğe bulunamadı:", error);
+      showToast("İşlem başarısız", "error");
+    }
+  };
+
+  // Ana listedeki öğeyi güncelle
+  const updateWatchlistItem = async (updates) => {
+    if (!watchlistItem?.docId) return;
+    try {
+      await updateDoc(doc(db, "watchlist", watchlistItem.docId), {
+        ...updates,
+        updatedAt: new Date()
+      });
+      showToast('Güncellendi', 'success');
+      setShowRatingModal(false);
+      setShowStatusModal(false);
+      setWatchlistItem(null);
+      setSelectedItem(null);
+    } catch (error) {
+      console.error("Güncelleme hatası:", error);
+      showToast('Güncelleme başarısız', 'error');
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -318,6 +374,20 @@ const CustomListDetail = () => {
                 
                 <div className="item-actions">
                   <button 
+                    className="btn-edit-status"
+                    onClick={() => openEditModal(item, 'status')}
+                    title="Durum Düzenle"
+                  >
+                    <FaEdit />
+                  </button>
+                  <button 
+                    className="btn-rate"
+                    onClick={() => openEditModal(item, 'rating')}
+                    title="Puanla"
+                  >
+                    <FaStar />
+                  </button>
+                  <button 
                     className="btn-move"
                     onClick={() => openMoveModal(item)}
                     title="Taşı/Kopyala"
@@ -397,6 +467,28 @@ const CustomListDetail = () => {
           onCancel={() => setShowConfirm(false)}
         />
       )}
+
+      {/* Rating Modal */}
+      <RatingModal
+        isOpen={showRatingModal}
+        onClose={() => { setShowRatingModal(false); setSelectedItem(null); setWatchlistItem(null); }}
+        onSave={(rating) => updateWatchlistItem({ userRating: rating })}
+        currentRating={watchlistItem?.userRating || 0}
+        title={selectedItem?.title || ''}
+      />
+
+      {/* Status Modal */}
+      <StatusModal
+        isOpen={showStatusModal}
+        onClose={() => { setShowStatusModal(false); setSelectedItem(null); setWatchlistItem(null); }}
+        onSave={(data) => updateWatchlistItem(data)}
+        currentStatus={watchlistItem?.status}
+        currentProgress={watchlistItem?.progress || 0}
+        currentNotes={watchlistItem?.notes || ''}
+        title={selectedItem?.title || ''}
+        totalEpisodes={watchlistItem?.episodeCount}
+        mediaType={watchlistItem?.mediaType || 'movie'}
+      />
     </div>
   );
 };

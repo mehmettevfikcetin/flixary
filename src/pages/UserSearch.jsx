@@ -1,12 +1,101 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, Navigate } from 'react-router-dom';
 import { db, auth } from '../firebase';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
-import { FaSearch, FaUser, FaFilm, FaTv, FaEye, FaCheck, FaCalendar, FaPause, FaTimes, FaStar, FaArrowLeft } from 'react-icons/fa';
+import { collection, query, where, getDocs, doc, getDoc, limit, orderBy, setDoc, deleteDoc, updateDoc, arrayUnion, increment, addDoc } from 'firebase/firestore';
+import { FaSearch, FaUser, FaFilm, FaTv, FaEye, FaCheck, FaCalendar, FaPause, FaTimes, FaStar, FaArrowLeft, FaShare, FaCopy, FaAt, FaUserPlus, FaUserMinus, FaClone } from 'react-icons/fa';
 import { showToast } from '../components/Toast';
 
 const IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
 const BANNER_PLACEHOLDER = "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1200&h=300&fit=crop";
+
+// Takipçi/Takip Edilen Listesi Modal
+const FollowListModal = ({ isOpen, onClose, userId, type, title }) => {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isOpen && userId) {
+      fetchFollowList();
+    }
+  }, [isOpen, userId, type]);
+
+  const fetchFollowList = async () => {
+    setLoading(true);
+    try {
+      let followQuery;
+      if (type === 'followers') {
+        followQuery = query(collection(db, "follows"), where("followingId", "==", userId));
+      } else {
+        followQuery = query(collection(db, "follows"), where("followerId", "==", userId));
+      }
+      
+      const snapshot = await getDocs(followQuery);
+      const userIds = [];
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        userIds.push(type === 'followers' ? data.followerId : data.followingId);
+      });
+
+      // Kullanıcı bilgilerini al
+      const usersData = [];
+      for (const uid of userIds) {
+        const userDoc = await getDoc(doc(db, "users", uid));
+        if (userDoc.exists()) {
+          usersData.push({ id: userDoc.id, ...userDoc.data() });
+        }
+      }
+      setUsers(usersData);
+    } catch (error) {
+      console.error("Takip listesi yüklenemedi:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content follow-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>{title}</h3>
+          <button className="modal-close" onClick={onClose}><FaTimes /></button>
+        </div>
+        <div className="modal-body">
+          {loading ? (
+            <div className="loading-container" style={{ minHeight: '200px' }}>
+              <div className="loader"></div>
+            </div>
+          ) : users.length === 0 ? (
+            <div className="empty-follow-list">
+              <p>{type === 'followers' ? 'Henüz takipçi yok' : 'Henüz kimse takip edilmiyor'}</p>
+            </div>
+          ) : (
+            <div className="follow-list">
+              {users.map(user => (
+                <Link 
+                  to={`/user/${user.id}`} 
+                  key={user.id} 
+                  className="follow-list-item"
+                  onClick={onClose}
+                >
+                  <img 
+                    src={user.photoURL || 'https://via.placeholder.com/40'} 
+                    alt={user.displayName}
+                  />
+                  <div className="follow-user-info">
+                    <span className="follow-user-name">{user.displayName || 'Kullanıcı'}</span>
+                    {user.username && <span className="follow-user-username">@{user.username}</span>}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const UserProfile = () => {
   const { userId } = useParams();
@@ -16,6 +105,10 @@ const UserProfile = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   const [selectedList, setSelectedList] = useState(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [showFollowModal, setShowFollowModal] = useState(null); // 'followers' | 'following' | null
   
   // Bu benim profilim mi?
   const isOwnProfile = auth.currentUser?.uid === userId;
@@ -23,8 +116,83 @@ const UserProfile = () => {
   useEffect(() => {
     if (userId) {
       fetchUserProfile();
+      if (auth.currentUser && !isOwnProfile) {
+        checkFollowStatus();
+      }
     }
   }, [userId]);
+
+  // Takip durumunu kontrol et
+  const checkFollowStatus = async () => {
+    if (!auth.currentUser) return;
+    try {
+      const followDoc = await getDoc(doc(db, "follows", `${auth.currentUser.uid}_${userId}`));
+      setIsFollowing(followDoc.exists());
+    } catch (error) {
+      console.error("Takip durumu kontrol hatası:", error);
+    }
+  };
+
+  // Takip et / Takipten çık
+  const toggleFollow = async () => {
+    if (!auth.currentUser) {
+      showToast("Lütfen önce giriş yapın", "warning");
+      return;
+    }
+
+    const followId = `${auth.currentUser.uid}_${userId}`;
+    
+    try {
+      if (isFollowing) {
+        // Takipten çık
+        await deleteDoc(doc(db, "follows", followId));
+        setIsFollowing(false);
+        setFollowersCount(prev => Math.max(0, prev - 1));
+        showToast("Takipten çıkıldı", "success");
+      } else {
+        // Takip et
+        await setDoc(doc(db, "follows", followId), {
+          followerId: auth.currentUser.uid,
+          followingId: userId,
+          createdAt: new Date()
+        });
+        setIsFollowing(true);
+        setFollowersCount(prev => prev + 1);
+        showToast(`${userProfile?.displayName || 'Kullanıcı'} takip edildi`, "success");
+      }
+    } catch (error) {
+      console.error("Takip hatası:", error);
+      showToast("İşlem başarısız", "error");
+    }
+  };
+
+  // Listeyi kopyala
+  const copyListToMyProfile = async (listToCopy) => {
+    if (!auth.currentUser) {
+      showToast("Lütfen önce giriş yapın", "warning");
+      return;
+    }
+
+    try {
+      // Yeni liste oluştur
+      const newList = {
+        uid: auth.currentUser.uid,
+        name: `${listToCopy.name} (${userProfile?.displayName || 'Kopyalanan'})`,
+        emoji: listToCopy.emoji || '📋',
+        color: listToCopy.color || '#3db4f2',
+        itemCount: listToCopy.items?.length || 0,
+        items: listToCopy.items || [],
+        copiedFrom: userId,
+        createdAt: new Date()
+      };
+
+      await addDoc(collection(db, "customLists"), newList);
+      showToast(`"${listToCopy.name}" listenize kopyalandı!`, "success");
+    } catch (error) {
+      console.error("Liste kopyalama hatası:", error);
+      showToast("Liste kopyalanamadı", "error");
+    }
+  };
 
   const fetchUserProfile = async () => {
     setLoading(true);
@@ -40,6 +208,22 @@ const UserProfile = () => {
       
       setUserProfile({ id: userDoc.id, ...userDoc.data() });
       
+      // Takipçi sayısını al
+      const followersQuery = query(
+        collection(db, "follows"),
+        where("followingId", "==", userId)
+      );
+      const followersSnapshot = await getDocs(followersQuery);
+      setFollowersCount(followersSnapshot.size);
+      
+      // Takip edilen sayısını al
+      const followingQuery = query(
+        collection(db, "follows"),
+        where("followerId", "==", userId)
+      );
+      const followingSnapshot = await getDocs(followingQuery);
+      setFollowingCount(followingSnapshot.size);
+      
       // Kullanıcının izleme listesini al
       const watchlistQuery = query(
         collection(db, "watchlist"),
@@ -52,7 +236,7 @@ const UserProfile = () => {
       });
       setUserWatchlist(watchlistItems);
       
-      // Kullanıcının özel listelerini al (sadece public olanları gelecekte)
+      // Kullanıcının özel listelerini al
       const listsQuery = query(
         collection(db, "customLists"),
         where("uid", "==", userId)
@@ -123,6 +307,14 @@ const UserProfile = () => {
     dropped: '#e74c3c'
   };
 
+  const copyProfileLink = () => {
+    const link = userProfile.username 
+      ? `${window.location.origin}/u/${userProfile.username}`
+      : `${window.location.origin}/user/${userId}`;
+    navigator.clipboard.writeText(link);
+    showToast("Profil linki kopyalandı!", "success");
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -152,6 +344,9 @@ const UserProfile = () => {
           }}
         >
           <div className="banner-overlay" />
+          <button className="share-profile-btn" onClick={copyProfileLink} title="Profili Paylaş">
+            <FaShare /> Paylaş
+          </button>
         </div>
         
         <div className="user-profile-info">
@@ -162,19 +357,44 @@ const UserProfile = () => {
           />
           <div className="user-details">
             <h1>{userProfile.displayName || 'Kullanıcı'}</h1>
+            {userProfile.username && (
+              <span className="user-username">@{userProfile.username}</span>
+            )}
             {userProfile.bio && <p className="user-bio">{userProfile.bio}</p>}
             
-            {isOwnProfile && (
-              <Link to="/settings" className="btn-edit-profile">
-                Profili Düzenle
-              </Link>
-            )}
+            <div className="user-profile-actions">
+              {isOwnProfile ? (
+                <Link to="/settings" className="btn-edit-profile">
+                  Profili Düzenle
+                </Link>
+              ) : (
+                <>
+                  <button 
+                    className={`btn-follow ${isFollowing ? 'following' : ''}`}
+                    onClick={toggleFollow}
+                  >
+                    {isFollowing ? <><FaUserMinus /> Takipten Çık</> : <><FaUserPlus /> Takip Et</>}
+                  </button>
+                  <button className="btn-share-small" onClick={copyProfileLink}>
+                    <FaCopy /> Kopyala
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Stats */}
       <div className="user-stats-bar">
+        <button className="stat-item clickable" onClick={() => setShowFollowModal('followers')}>
+          <span className="stat-value">{followersCount}</span>
+          <span className="stat-label">Takipçi</span>
+        </button>
+        <button className="stat-item clickable" onClick={() => setShowFollowModal('following')}>
+          <span className="stat-value">{followingCount}</span>
+          <span className="stat-label">Takip</span>
+        </button>
         <div className="stat-item">
           <span className="stat-value">{stats.totalMovies}</span>
           <span className="stat-label">Film</span>
@@ -187,20 +407,21 @@ const UserProfile = () => {
           <span className="stat-value">{stats.completedCount}</span>
           <span className="stat-label">Tamamlandı</span>
         </div>
-        <div className="stat-item">
-          <span className="stat-value">{stats.watchingCount}</span>
-          <span className="stat-label">İzleniyor</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-value">{stats.averageRating.toFixed(1)}</span>
-          <span className="stat-label">Ort. Puan</span>
-        </div>
       </div>
+
+      {/* Follow List Modal */}
+      <FollowListModal
+        isOpen={showFollowModal !== null}
+        onClose={() => setShowFollowModal(null)}
+        userId={userId}
+        type={showFollowModal}
+        title={showFollowModal === 'followers' ? 'Takipçiler' : 'Takip Edilenler'}
+      />
 
       {/* Custom Lists */}
       {userCustomLists.length > 0 && (
         <div className="user-custom-lists-section">
-          <h3>📋 Listeler</h3>
+          <h3>📋 Listeler {!isOwnProfile && <span className="copy-hint">(Listeye tıklayarak kopyalayabilirsiniz)</span>}</h3>
           <div className="user-lists-row">
             <button
               className={`user-list-chip ${selectedList === null ? 'active' : ''}`}
@@ -209,14 +430,24 @@ const UserProfile = () => {
               Tümü
             </button>
             {userCustomLists.map(list => (
-              <button
-                key={list.id}
-                className={`user-list-chip ${selectedList === list.id ? 'active' : ''}`}
-                onClick={() => { setSelectedList(list.id); setActiveTab(null); }}
-                style={{ '--list-color': list.color }}
-              >
-                {list.emoji} {list.name} ({list.itemCount || 0})
-              </button>
+              <div key={list.id} className="user-list-chip-wrapper">
+                <button
+                  className={`user-list-chip ${selectedList === list.id ? 'active' : ''}`}
+                  onClick={() => { setSelectedList(list.id); setActiveTab(null); }}
+                  style={{ '--list-color': list.color }}
+                >
+                  {list.emoji} {list.name} ({list.itemCount || 0})
+                </button>
+                {!isOwnProfile && (
+                  <button 
+                    className="copy-list-btn"
+                    onClick={(e) => { e.stopPropagation(); copyListToMyProfile(list); }}
+                    title="Listeyi kopyala"
+                  >
+                    <FaClone />
+                  </button>
+                )}
+              </div>
             ))}
           </div>
         </div>
@@ -313,28 +544,47 @@ const UserSearch = () => {
     setSearched(true);
     
     try {
-      // Kullanıcı adına göre ara (displayName içinde)
-      // Not: Firestore'da tam metin araması yok, bu yüzden tüm kullanıcıları çekip filtreliyoruz
-      // Büyük ölçekli uygulamalarda Algolia veya Elasticsearch kullanılmalı
       const usersRef = collection(db, "users");
-      const snapshot = await getDocs(usersRef);
-      
+      const queryLower = searchQuery.toLowerCase().replace('@', '');
       const users = [];
-      const queryLower = searchQuery.toLowerCase();
       
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        // Kendi profilimi gösterme
-        if (doc.id === auth.currentUser?.uid) return;
-        
-        // displayName veya email'de ara
-        const displayName = (data.displayName || '').toLowerCase();
-        const email = (data.email || '').toLowerCase();
-        
-        if (displayName.includes(queryLower) || email.split('@')[0].includes(queryLower)) {
-          users.push({ id: doc.id, ...data });
+      // Önce username ile tam eşleşme ara
+      const usernameQuery = query(
+        usersRef,
+        where("username", "==", queryLower)
+      );
+      const usernameSnapshot = await getDocs(usernameQuery);
+      
+      usernameSnapshot.forEach(doc => {
+        if (doc.id !== auth.currentUser?.uid) {
+          users.push({ id: doc.id, ...doc.data() });
         }
       });
+      
+      // Eğer username ile bulunamadıysa, displayName ile ara
+      if (users.length === 0) {
+        const allUsersSnapshot = await getDocs(usersRef);
+        
+        allUsersSnapshot.forEach(doc => {
+          const data = doc.data();
+          if (doc.id === auth.currentUser?.uid) return;
+          
+          const displayName = (data.displayName || '').toLowerCase();
+          const username = (data.username || '').toLowerCase();
+          const email = (data.email || '').toLowerCase();
+          
+          if (
+            displayName.includes(queryLower) || 
+            username.includes(queryLower) ||
+            email.split('@')[0].includes(queryLower)
+          ) {
+            // Duplicate kontrolü
+            if (!users.find(u => u.id === doc.id)) {
+              users.push({ id: doc.id, ...data });
+            }
+          }
+        });
+      }
       
       setSearchResults(users);
       
@@ -364,10 +614,10 @@ const UserSearch = () => {
 
       <div className="user-search-box">
         <div className="search-input-wrapper">
-          <FaUser className="search-icon" />
+          <FaAt className="search-icon" />
           <input
             type="text"
-            placeholder="Kullanıcı adı veya e-posta ile ara..."
+            placeholder="@kullaniciadi veya isim ile ara..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={handleKeyPress}
@@ -406,6 +656,7 @@ const UserSearch = () => {
                   />
                   <div className="user-result-info">
                     <h4>{user.displayName || 'Kullanıcı'}</h4>
+                    {user.username && <span className="user-result-username">@{user.username}</span>}
                     {user.bio && <p className="user-result-bio">{user.bio.slice(0, 60)}...</p>}
                   </div>
                   <span className="view-profile-btn">Profili Gör</span>
@@ -421,9 +672,9 @@ const UserSearch = () => {
         <div className="search-tips">
           <h3>💡 İpuçları</h3>
           <ul>
-            <li>Arkadaşının kullanıcı adını veya e-posta adresini yazın</li>
+            <li>Kullanıcı adını @ ile arayın (örn: @filmcitevfik)</li>
+            <li>İsim veya kullanıcı adı ile arama yapabilirsiniz</li>
             <li>Profilleri görüntüleyerek listelerini keşfedin</li>
-            <li>İlham almak için başkalarının izleme listelerine göz atın</li>
           </ul>
         </div>
       )}
@@ -433,3 +684,61 @@ const UserSearch = () => {
 
 export { UserProfile, UserSearch };
 export default UserSearch;
+
+// Username ile profil yönlendirme bileşeni
+export const UserProfileByUsername = () => {
+  const { username } = useParams();
+  const [userId, setUserId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    const findUserByUsername = async () => {
+      try {
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("username", "==", username.toLowerCase()));
+        const snapshot = await getDocs(q);
+        
+        if (snapshot.empty) {
+          setNotFound(true);
+        } else {
+          setUserId(snapshot.docs[0].id);
+        }
+      } catch (error) {
+        console.error("Kullanıcı bulunamadı:", error);
+        setNotFound(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (username) {
+      findUserByUsername();
+    }
+  }, [username]);
+
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loader"></div>
+        <p>Kullanıcı aranıyor...</p>
+      </div>
+    );
+  }
+
+  if (notFound) {
+    return (
+      <div className="error-container">
+        <h2>@{username} bulunamadı</h2>
+        <p>Bu kullanıcı adına sahip bir kullanıcı yok.</p>
+        <Link to="/users" className="btn-back">Kullanıcı Ara</Link>
+      </div>
+    );
+  }
+
+  if (userId) {
+    return <Navigate to={`/user/${userId}`} replace />;
+  }
+
+  return null;
+};

@@ -1,14 +1,225 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { db, auth } from '../firebase';
-import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, addDoc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, addDoc, getDoc, setDoc, arrayRemove, arrayUnion, increment, getDocs } from 'firebase/firestore';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaStar, FaEdit, FaTrash, FaEye, FaCheck, FaCalendar, FaPause, FaTimes, FaPlus, FaListUl, FaCamera, FaUserFriends } from 'react-icons/fa';
+import { FaStar, FaEdit, FaTrash, FaEye, FaCheck, FaCalendar, FaPause, FaTimes, FaPlus, FaListUl, FaCamera, FaFolderPlus } from 'react-icons/fa';
 import FilterBar from '../components/FilterBar';
 import RatingModal from '../components/RatingModal';
 import StatusModal from '../components/StatusModal';
 import StatsCard from '../components/StatsCard';
 import ConfirmModal from '../components/ConfirmModal';
 import { showToast } from '../components/Toast';
+
+// Takipçi/Takip Edilen Listesi Modal
+const FollowListModal = ({ isOpen, onClose, userId, type, title }) => {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isOpen && userId) {
+      fetchFollowList();
+    }
+  }, [isOpen, userId, type]);
+
+  const fetchFollowList = async () => {
+    setLoading(true);
+    try {
+      let followQuery;
+      if (type === 'followers') {
+        followQuery = query(collection(db, "follows"), where("followingId", "==", userId));
+      } else {
+        followQuery = query(collection(db, "follows"), where("followerId", "==", userId));
+      }
+      
+      const snapshot = await getDocs(followQuery);
+      const userIds = [];
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        userIds.push(type === 'followers' ? data.followerId : data.followingId);
+      });
+
+      // Kullanıcı bilgilerini al
+      const usersData = [];
+      for (const uid of userIds) {
+        const userDoc = await getDoc(doc(db, "users", uid));
+        if (userDoc.exists()) {
+          usersData.push({ id: userDoc.id, ...userDoc.data() });
+        }
+      }
+      setUsers(usersData);
+    } catch (error) {
+      console.error("Takip listesi yüklenemedi:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content follow-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>{title}</h3>
+          <button className="modal-close" onClick={onClose}><FaTimes /></button>
+        </div>
+        <div className="modal-body">
+          {loading ? (
+            <div className="loading-container" style={{ minHeight: '200px' }}>
+              <div className="loader"></div>
+            </div>
+          ) : users.length === 0 ? (
+            <div className="empty-follow-list">
+              <p>{type === 'followers' ? 'Henüz takipçi yok' : 'Henüz kimse takip edilmiyor'}</p>
+            </div>
+          ) : (
+            <div className="follow-list">
+              {users.map(user => (
+                <Link 
+                  to={`/user/${user.id}`} 
+                  key={user.id} 
+                  className="follow-list-item"
+                  onClick={onClose}
+                >
+                  <img 
+                    src={user.photoURL || 'https://via.placeholder.com/40'} 
+                    alt={user.displayName}
+                  />
+                  <div className="follow-user-info">
+                    <span className="follow-user-name">{user.displayName || 'Kullanıcı'}</span>
+                    {user.username && <span className="follow-user-username">@{user.username}</span>}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Özel Listeye Ekleme Modal
+const AddToCustomListModal = ({ isOpen, onClose, item, customLists, onAdd }) => {
+  const [selectedListId, setSelectedListId] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  if (!isOpen || !item) return null;
+
+  // Zaten bu öğeyi içeren listeleri bul
+  const listsContainingItem = customLists.filter(list => 
+    list.items?.some(i => i.tmdbId === item.tmdbId && i.mediaType === item.mediaType)
+  );
+
+  const handleAdd = async () => {
+    if (!selectedListId) {
+      showToast('Lütfen bir liste seçin', 'warning');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const selectedList = customLists.find(l => l.id === selectedListId);
+      
+      // Zaten listede var mı kontrol et
+      const alreadyInList = selectedList.items?.some(
+        i => i.tmdbId === item.tmdbId && i.mediaType === item.mediaType
+      );
+
+      if (alreadyInList) {
+        showToast('Bu içerik zaten bu listede mevcut', 'warning');
+        setLoading(false);
+        return;
+      }
+
+      // Listeye ekle
+      const newItem = {
+        tmdbId: item.tmdbId,
+        mediaType: item.mediaType,
+        title: item.title,
+        poster: item.poster,
+        rating: item.rating,
+        releaseDate: item.releaseDate,
+        userRating: item.userRating,
+        status: item.status,
+        addedAt: new Date()
+      };
+
+      await updateDoc(doc(db, "customLists", selectedListId), {
+        items: arrayUnion(newItem),
+        itemCount: increment(1)
+      });
+
+      showToast(`"${item.title}" listeye eklendi`, 'success');
+      onClose();
+    } catch (error) {
+      console.error("Listeye ekleme hatası:", error);
+      showToast('Listeye eklenemedi', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content add-to-list-modal" onClick={e => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose}><FaTimes /></button>
+        
+        <h3><FaFolderPlus /> Listeye Ekle</h3>
+        <p className="modal-subtitle">{item.title}</p>
+
+        {listsContainingItem.length > 0 && (
+          <div className="already-in-lists">
+            <span>Zaten şu listelerde:</span>
+            <div className="list-tags">
+              {listsContainingItem.map(list => (
+                <span key={list.id} className="list-tag" style={{ backgroundColor: list.color }}>
+                  {list.emoji} {list.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="available-lists">
+          <h4>Eklenecek Liste Seç</h4>
+          {customLists.length === 0 ? (
+            <p className="no-lists-msg">Henüz özel liste oluşturmadınız.</p>
+          ) : (
+            <div className="lists-select-grid">
+              {customLists
+                .filter(list => !listsContainingItem.some(l => l.id === list.id))
+                .map(list => (
+                  <button
+                    key={list.id}
+                    className={`list-select-btn ${selectedListId === list.id ? 'selected' : ''}`}
+                    onClick={() => setSelectedListId(list.id)}
+                    style={{ '--list-color': list.color }}
+                  >
+                    <span className="list-emoji">{list.emoji}</span>
+                    <span className="list-name">{list.name}</span>
+                    <span className="list-count">{list.itemCount || 0}</span>
+                  </button>
+                ))
+              }
+            </div>
+          )}
+        </div>
+
+        <div className="modal-actions">
+          <button className="btn-cancel" onClick={onClose}>İptal</button>
+          <button 
+            className="btn-save" 
+            onClick={handleAdd} 
+            disabled={loading || !selectedListId}
+          >
+            {loading ? 'Ekleniyor...' : 'Listeye Ekle'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const BANNER_PLACEHOLDER = "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1200&h=300&fit=crop";
 const BANNER_OPTIONS = [
@@ -56,6 +267,15 @@ const Profile = () => {
   // Banner
   const [userBanner, setUserBanner] = useState(BANNER_PLACEHOLDER);
   const [showBannerModal, setShowBannerModal] = useState(false);
+  
+  // Takipçi/Takip
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [showFollowModal, setShowFollowModal] = useState(null);
+  
+  // Özel listeye ekleme modal
+  const [showAddToListModal, setShowAddToListModal] = useState(false);
+  const [itemToAddToList, setItemToAddToList] = useState(null);
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -140,20 +360,37 @@ const Profile = () => {
     setShowConfirmModal(false);
   };
 
-  // Kullanıcı banner'ını yükle
+  // Kullanıcı banner'ını ve takip istatistiklerini yükle
   useEffect(() => {
-    const fetchUserBanner = async () => {
+    const fetchUserData = async () => {
       if (!auth.currentUser) return;
       try {
+        // Banner
         const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
         if (userDoc.exists() && userDoc.data().bannerURL) {
           setUserBanner(userDoc.data().bannerURL);
         }
+        
+        // Takipçi sayısı
+        const followersQuery = query(
+          collection(db, "follows"),
+          where("followingId", "==", auth.currentUser.uid)
+        );
+        const followersSnapshot = await getDocs(followersQuery);
+        setFollowersCount(followersSnapshot.size);
+        
+        // Takip edilen sayısı
+        const followingQuery = query(
+          collection(db, "follows"),
+          where("followerId", "==", auth.currentUser.uid)
+        );
+        const followingSnapshot = await getDocs(followingQuery);
+        setFollowingCount(followingSnapshot.size);
       } catch (error) {
-        console.error("Banner yüklenemedi:", error);
+        console.error("Veri yüklenemedi:", error);
       }
     };
-    fetchUserBanner();
+    fetchUserData();
   }, []);
 
   // Banner'ı güncelle
@@ -327,7 +564,7 @@ const Profile = () => {
   const handleDeleteItem = (item) => {
     setConfirmData({
       title: 'Listeden Kaldır',
-      message: `"${item.title}" listeden kaldırılsın mı?`,
+      message: `"${item.title}" ana listeden ve tüm özel listelerden kaldırılacak. Devam etmek istiyor musunuz?`,
       onConfirm: () => deleteItem(item)
     });
     setShowConfirmModal(true);
@@ -335,7 +572,22 @@ const Profile = () => {
 
   const deleteItem = async (item) => {
     try {
+      // Ana listeden sil
       await deleteDoc(doc(db, "watchlist", item.docId));
+      
+      // Tüm özel listelerden de sil (tmdbId ve mediaType eşleşmesi ile)
+      for (const customList of customLists) {
+        const itemInList = customList.items?.find(
+          i => i.tmdbId === item.tmdbId && i.mediaType === item.mediaType
+        );
+        if (itemInList) {
+          await updateDoc(doc(db, "customLists", customList.id), {
+            items: arrayRemove(itemInList),
+            itemCount: increment(-1)
+          });
+        }
+      }
+      
       showToast('Listeden kaldırıldı', 'success');
     } catch (error) {
       console.error("Silme hatası:", error);
@@ -398,7 +650,25 @@ const Profile = () => {
             className="profile-avatar"
           />
           <div className="profile-details">
-            <h1>{user?.displayName || 'Kullanıcı'}</h1>
+            <div className="profile-name-row">
+              <h1>{user?.displayName || 'Kullanıcı'}</h1>
+              <div className="profile-follow-stats">
+                <button 
+                  className="follow-stat-btn"
+                  onClick={() => setShowFollowModal('followers')}
+                >
+                  <span className="follow-count">{followersCount}</span>
+                  <span className="follow-label">Takipçi</span>
+                </button>
+                <button 
+                  className="follow-stat-btn"
+                  onClick={() => setShowFollowModal('following')}
+                >
+                  <span className="follow-count">{followingCount}</span>
+                  <span className="follow-label">Takip</span>
+                </button>
+              </div>
+            </div>
             <p className="profile-email">{user?.email}</p>
             <p className="profile-joined">
               Katılım: {user?.metadata?.creationTime 
@@ -406,9 +676,6 @@ const Profile = () => {
                 : 'N/A'
               }
             </p>
-            <Link to="/users" className="find-friends-btn">
-              <FaUserFriends /> Kullanıcı Ara
-            </Link>
           </div>
         </div>
       </div>
@@ -559,18 +826,28 @@ const Profile = () => {
                   <button 
                     className="btn-edit"
                     onClick={() => { setSelectedItem(item); setShowStatusModal(true); }}
+                    title="Düzenle"
                   >
                     <FaEdit />
                   </button>
                   <button 
                     className="btn-rate"
                     onClick={() => { setSelectedItem(item); setShowRatingModal(true); }}
+                    title="Puanla"
                   >
                     <FaStar />
                   </button>
                   <button 
+                    className="btn-add-to-list"
+                    onClick={() => { setItemToAddToList(item); setShowAddToListModal(true); }}
+                    title="Özel Listeye Ekle"
+                  >
+                    <FaFolderPlus />
+                  </button>
+                  <button 
                     className="btn-delete"
                     onClick={() => handleDeleteItem(item)}
+                    title="Sil"
                   >
                     <FaTrash />
                   </button>
@@ -615,13 +892,16 @@ const Profile = () => {
                 )}
               </div>
               <div className="list-item-actions">
-                <button onClick={() => { setSelectedItem(item); setShowStatusModal(true); }}>
+                <button onClick={() => { setSelectedItem(item); setShowStatusModal(true); }} title="Düzenle">
                   <FaEdit />
                 </button>
-                <button onClick={() => { setSelectedItem(item); setShowRatingModal(true); }}>
+                <button onClick={() => { setSelectedItem(item); setShowRatingModal(true); }} title="Puanla">
                   <FaStar />
                 </button>
-                <button onClick={() => handleDeleteItem(item)}>
+                <button onClick={() => { setItemToAddToList(item); setShowAddToListModal(true); }} title="Özel Listeye Ekle">
+                  <FaFolderPlus />
+                </button>
+                <button onClick={() => handleDeleteItem(item)} title="Sil">
                   <FaTrash />
                 </button>
               </div>
@@ -767,6 +1047,23 @@ const Profile = () => {
           confirmText="Evet, Sil"
         />
       )}
+
+      {/* Follow List Modal */}
+      <FollowListModal
+        isOpen={showFollowModal !== null}
+        onClose={() => setShowFollowModal(null)}
+        userId={auth.currentUser?.uid}
+        type={showFollowModal}
+        title={showFollowModal === 'followers' ? 'Takipçiler' : 'Takip Edilenler'}
+      />
+
+      {/* Add to Custom List Modal */}
+      <AddToCustomListModal
+        isOpen={showAddToListModal}
+        onClose={() => { setShowAddToListModal(false); setItemToAddToList(null); }}
+        item={itemToAddToList}
+        customLists={customLists}
+      />
     </div>
   );
 };
