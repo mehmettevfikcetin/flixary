@@ -77,6 +77,7 @@ npm install
 
 3. Create `.env` file in the root directory:
 ```env
+VITE_TMDB_API_KEY=your_tmdb_api_key
 VITE_FIREBASE_API_KEY=your_firebase_api_key
 VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
 VITE_FIREBASE_PROJECT_ID=your_project_id
@@ -85,8 +86,10 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
 ```
 
-4. Update TMDB API key in source files:
-   - Replace `API_KEY` in `src/utils/tmdbUtils.js`
+4. Get your TMDB API key:
+   - Sign up at [TMDB](https://www.themoviedb.org/)
+   - Go to Settings → API → Create → Developer
+   - Copy your API Key (v3 auth)
 
 5. Run development server:
 ```bash
@@ -244,6 +247,7 @@ npm install
 
 3. Kök dizinde `.env` dosyası oluşturun:
 ```env
+VITE_TMDB_API_KEY=tmdb_api_anahtariniz
 VITE_FIREBASE_API_KEY=firebase_api_anahtariniz
 VITE_FIREBASE_AUTH_DOMAIN=auth_domain
 VITE_FIREBASE_PROJECT_ID=proje_id
@@ -252,8 +256,10 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=sender_id
 VITE_FIREBASE_APP_ID=app_id
 ```
 
-4. Kaynak dosyalarda TMDB API anahtarını güncelleyin:
-   - `src/utils/tmdbUtils.js` dosyasındaki `API_KEY`'i değiştirin
+4. TMDB API anahtarınızı alın:
+   - [TMDB](https://www.themoviedb.org/) sitesine kayıt olun
+   - Ayarlar → API → Oluştur → Geliştirici
+   - API Key (v3 auth) anahtarınızı kopyalayın
 
 5. Geliştirme sunucusunu çalıştırın:
 ```bash

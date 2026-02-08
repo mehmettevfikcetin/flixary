@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const API_KEY = "44b7633393c97b1370a03d9a7414f7b1";
+const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+
+if (!API_KEY) {
+  console.error('TMDB API key is missing! Please add VITE_TMDB_API_KEY to your .env file.');
+}
 
 /**
  * TMDB API'den hem tr-TR hem en-US sonuçları çeker,
