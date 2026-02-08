@@ -252,22 +252,20 @@ const Profile = () => {
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
 
-  // StatusModal açılırken episode count eksikse TMDB'den çek
+  // StatusModal açılırken episode count eksikse TMDB'den çek (sadece state'te tut, Firestore'a kaydetmeyi Save butonuna bırak)
   const openStatusModal = async (item) => {
     setSelectedItem(item);
     if (item.mediaType === 'tv' && !item.episodeCount && item.tmdbId) {
       try {
         const tvDetails = await fetchTvEpisodeCount(item.tmdbId);
         if (tvDetails.episodeCount) {
-          // State'i güncelle
-          setSelectedItem(prev => ({ ...prev, episodeCount: tvDetails.episodeCount, seasonCount: tvDetails.seasonCount }));
-          // Firestore'u da güncelle
-          if (item.docId) {
-            await updateDoc(doc(db, 'watchlist', item.docId), {
-              episodeCount: tvDetails.episodeCount,
-              seasonCount: tvDetails.seasonCount
-            });
-          }
+          // Sadece state'i güncelle - Firestore'a kaydetme (kullanıcı Save'e bastığında kaydedilecek)
+          setSelectedItem(prev => ({ 
+            ...prev, 
+            episodeCount: tvDetails.episodeCount, 
+            seasonCount: tvDetails.seasonCount,
+            _episodeCountFetched: true // API'den çekildiğini işaretle
+          }));
         }
       } catch (err) {
         console.error('Bölüm sayısı çekilemedi:', err);
@@ -575,10 +573,14 @@ const Profile = () => {
   const updateItem = async (updates) => {
     if (!selectedItem?.docId) return;
     try {
-      await updateDoc(doc(db, "watchlist", selectedItem.docId), {
-        ...updates,
-        updatedAt: new Date()
-      });
+      // Eğer episodeCount API'den çekilmişse onu da kaydet
+      const finalUpdates = { ...updates, updatedAt: new Date() };
+      if (selectedItem._episodeCountFetched && selectedItem.episodeCount) {
+        finalUpdates.episodeCount = selectedItem.episodeCount;
+        finalUpdates.seasonCount = selectedItem.seasonCount;
+      }
+      
+      await updateDoc(doc(db, "watchlist", selectedItem.docId), finalUpdates);
       showToast('Güncellendi', 'success');
     } catch (error) {
       console.error("Güncelleme hatası:", error);
