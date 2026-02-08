@@ -142,42 +142,6 @@ flixary/
 └── vite.config.js
 ```
 
-### 🔧 Configuration
-
-#### Firebase Rules
-
-Update your Firestore security rules:
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read: if true;
-      allow create, update: if request.auth != null && request.auth.uid == userId;
-      allow delete: if false;
-    }
-    match /watchlist/{entryId} {
-      allow read: if true;
-      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
-      allow update: if request.auth != null && resource.data.uid == request.auth.uid;
-      allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
-    }
-    match /customLists/{listId} {
-      allow read: if true;
-      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
-      allow update: if request.auth != null && resource.data.uid == request.auth.uid;
-      allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
-    }
-    match /follows/{followId} {
-      allow read: if true;
-      allow create: if request.auth != null && request.resource.data.followerId == request.auth.uid;
-      allow update: if false;
-      allow delete: if request.auth != null && resource.data.followerId == request.auth.uid;
-    }
-  }
-}
-```
 
 ### 🌟 Key Features Explained
 
