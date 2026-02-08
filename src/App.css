@@ -121,7 +121,7 @@ button {
 .navbar-logo {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--accent-primary);
@@ -3836,7 +3836,7 @@ button {
 .brand-logo {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
   margin-bottom: 0.5rem;
 }
 
