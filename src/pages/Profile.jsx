@@ -851,6 +851,26 @@ const Profile = () => {
                   <span className="tmdb-rating">
                     ⭐ {item.rating?.toFixed(1) || 'N/A'}
                   </span>
+                  {item.notes && item.notes.trim() && (
+                    <div className="card-note-wrapper">
+                      <button 
+                        className="note-indicator-btn"
+                        title="Notu göster"
+                        onClick={() => setNotePopupId(notePopupId === item.docId ? null : item.docId)}
+                      >
+                        <FaComment />
+                      </button>
+                      {notePopupId === item.docId && (
+                        <div className="note-popup">
+                          <div className="note-popup-header">
+                            <span>📝 Not</span>
+                            <button onClick={() => setNotePopupId(null)}><FaTimes /></button>
+                          </div>
+                          <p className="note-popup-text">{item.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="card-actions">
                   <button 
@@ -908,30 +928,30 @@ const Profile = () => {
                   )}
                 </div>
               </div>
+              {item.notes && item.notes.trim() ? (
+                <div className="list-item-note-wrapper">
+                  <button 
+                    className="note-indicator-btn"
+                    title="Notu göster"
+                    onClick={() => setNotePopupId(notePopupId === item.docId ? null : item.docId)}
+                  >
+                    <FaComment />
+                  </button>
+                  {notePopupId === item.docId && (
+                    <div className="note-popup">
+                      <div className="note-popup-header">
+                        <span>📝 Not</span>
+                        <button onClick={() => setNotePopupId(null)}><FaTimes /></button>
+                      </div>
+                      <p className="note-popup-text">{item.notes}</p>
+                    </div>
+                  )}
+                </div>
+              ) : <div />}
               <div 
                 className="list-item-status"
                 style={{ color: statusColors[item.status] }}
               >
-                {item.notes && item.notes.trim() && (
-                  <div className="list-item-note-wrapper">
-                    <button 
-                      className="note-indicator-btn"
-                      title="Notu göster"
-                      onClick={() => setNotePopupId(notePopupId === item.docId ? null : item.docId)}
-                    >
-                      <FaComment />
-                    </button>
-                    {notePopupId === item.docId && (
-                      <div className="note-popup">
-                        <div className="note-popup-header">
-                          <span>📝 Not</span>
-                          <button onClick={() => setNotePopupId(null)}><FaTimes /></button>
-                        </div>
-                        <p className="note-popup-text">{item.notes}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
                 {statusIcons[item.status]} {statusLabels[item.status]}
               </div>
               <div className="list-item-rating">

@@ -1554,6 +1554,27 @@ button {
   margin-bottom: 0.5rem;
 }
 
+.card-note-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.card-note-wrapper .note-indicator-btn {
+  width: 24px;
+  height: 24px;
+  font-size: 0.75rem;
+}
+
+.card-note-wrapper .note-popup {
+  bottom: auto;
+  top: calc(100% + 8px);
+  right: 0;
+  left: auto;
+  width: 240px;
+}
+
 .watchlist-card .card-actions {
   display: flex;
   gap: 0.3rem;
@@ -1581,7 +1602,7 @@ button {
 
 .watchlist-list-item {
   display: grid;
-  grid-template-columns: 60px 1fr 120px 100px auto;
+  grid-template-columns: 60px 1fr 32px 120px 100px auto;
   align-items: center;
   gap: 1rem;
   padding: 0.8rem;
@@ -1622,9 +1643,9 @@ button {
 /* Not Butonu & Popup */
 .list-item-note-wrapper {
   position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  margin-right: 0.4rem;
+  justify-content: center;
 }
 
 .note-indicator-btn {
@@ -2101,7 +2122,10 @@ button {
     gap: 0.5rem;
   }
 
-  .list-item-status, .list-item-rating, .list-item-actions {
+  .list-item-note-wrapper,
+  .list-item-status,
+  .list-item-rating,
+  .list-item-actions {
     grid-column: 2;
   }
 
@@ -3696,6 +3720,7 @@ button {
     padding: 0.75rem;
   }
 
+  .list-item-note-wrapper,
   .list-item-status, 
   .list-item-rating, 
   .list-item-actions {

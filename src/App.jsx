@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import Navbar from './components/Navbar';
@@ -15,6 +15,15 @@ import CustomListDetail from './pages/CustomListDetail';
 import UserSearch, { UserProfile, UserProfileByUsername } from './pages/UserSearch';
 import { ToastContainer } from './components/Toast';
 import './App.css';
+
+// Sayfa değiştiğinde en üste scroll
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
 
 function App() {
   const [user, setUser] = useState(null);
@@ -49,6 +58,7 @@ function App() {
 
   return (
     <Router>
+      <ScrollToTop />
       <div className="app">
         <Navbar user={user} />
         <main className="main-content">
