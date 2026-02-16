@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { db, auth } from '../firebase';
 import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, addDoc, getDoc, setDoc, arrayRemove, arrayUnion, increment, getDocs } from 'firebase/firestore';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaStar, FaEdit, FaTrash, FaEye, FaCheck, FaCalendar, FaPause, FaTimes, FaPlus, FaListUl, FaCamera, FaFolderPlus } from 'react-icons/fa';
+import { FaStar, FaEdit, FaTrash, FaEye, FaCheck, FaCalendar, FaPause, FaTimes, FaPlus, FaListUl, FaCamera, FaFolderPlus, FaComment } from 'react-icons/fa';
 import FilterBar from '../components/FilterBar';
 import RatingModal from '../components/RatingModal';
 import StatusModal from '../components/StatusModal';
@@ -299,6 +299,9 @@ const Profile = () => {
   // Özel listeye ekleme modal
   const [showAddToListModal, setShowAddToListModal] = useState(false);
   const [itemToAddToList, setItemToAddToList] = useState(null);
+
+  // Not popup
+  const [notePopupId, setNotePopupId] = useState(null);
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -905,6 +908,26 @@ const Profile = () => {
                   )}
                 </div>
               </div>
+              {item.notes && item.notes.trim() && (
+                <div className="list-item-note-wrapper">
+                  <button 
+                    className="note-indicator-btn"
+                    title="Notu göster"
+                    onClick={() => setNotePopupId(notePopupId === item.docId ? null : item.docId)}
+                  >
+                    <FaComment />
+                  </button>
+                  {notePopupId === item.docId && (
+                    <div className="note-popup">
+                      <div className="note-popup-header">
+                        <span>📝 Not</span>
+                        <button onClick={() => setNotePopupId(null)}><FaTimes /></button>
+                      </div>
+                      <p className="note-popup-text">{item.notes}</p>
+                    </div>
+                  )}
+                </div>
+              )}
               <div 
                 className="list-item-status"
                 style={{ color: statusColors[item.status] }}
