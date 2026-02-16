@@ -123,7 +123,7 @@ const Discover = ({ type = 'movie' }) => {
   };
 
   // Listeye ekleme fonksiyonu
-  const addToList = async ({ status, customListId }) => {
+  const addToList = async ({ status, customListId, userRating }) => {
     if (!selectedItem) return;
 
     // Başlık seçimi: İngilizce > Orijinal > Türkçe
@@ -154,7 +154,7 @@ const Discover = ({ type = 'movie' }) => {
         episodeCount: episodeCount,
         seasonCount: seasonCount,
         status: status,
-        userRating: null,
+        userRating: userRating || null,
         progress: 0,
         notes: '',
         createdAt: new Date(),

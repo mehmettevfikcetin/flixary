@@ -3251,7 +3251,7 @@ button {
 
 /* Add to List Modal */
 .add-list-modal {
-  max-width: 450px;
+  max-width: 480px;
 }
 
 .add-list-modal .modal-subtitle {
@@ -3340,6 +3340,68 @@ button {
   margin-left: auto;
   font-size: 0.8rem;
   color: var(--text-muted);
+}
+
+/* Inline Rating in Add to List Modal */
+.rating-section {
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid rgba(255, 193, 7, 0.2);
+}
+
+.rating-section h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.inline-rating-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.inline-rating-container .star-rating.small {
+  display: flex;
+  justify-content: center;
+  gap: 0.15rem;
+}
+
+.inline-rating-container .star-rating.small .star-wrapper {
+  width: 24px;
+  height: 24px;
+}
+
+.inline-rating-container .star-rating.small .star-icon {
+  font-size: 1.3rem;
+}
+
+.inline-rating-input {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--bg-secondary);
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.inline-rating-input .rating-input {
+  width: 45px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.inline-rating-input .rating-max-label {
+  font-size: 0.85rem;
+}
+
+.inline-rating-container .rating-label {
+  font-size: 0.85rem;
+  color: #ffc107;
+  font-weight: 500;
 }
 
 /* ===================================

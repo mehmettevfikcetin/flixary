@@ -5,7 +5,7 @@ import { collection, query, where, onSnapshot, addDoc, doc, updateDoc, arrayUnio
 import MediaCard from './components/MediaCard';
 import AddToListModal from './components/AddToListModal';
 import { showToast } from './components/Toast';
-import { fetchWithEnglishTitles, getTitle, API_KEY } from './utils/tmdbUtils';
+import { fetchWithEnglishTitles, getTitle, API_KEY, fetchTvEpisodeCount } from './utils/tmdbUtils';
 import { FaFire, FaStar, FaFilm, FaTv, FaArrowRight, FaClock, FaChartLine } from 'react-icons/fa';
 
 const IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
@@ -107,7 +107,7 @@ const Home = () => {
   };
 
   // Listeye ekleme fonksiyonu
-  const addToList = async ({ status, customListId }) => {
+  const addToList = async ({ status, customListId, userRating }) => {
     if (!selectedItem) return;
     
     const mediaType = selectedType === 'movie' ? 'movie' : 'tv';
@@ -142,7 +142,7 @@ const Home = () => {
         episodeCount: episodeCount,
         seasonCount: seasonCount,
         status: status,
-        userRating: null,
+        userRating: userRating || null,
         progress: 0,
         notes: '',
         createdAt: new Date(),

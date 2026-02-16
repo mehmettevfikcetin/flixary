@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaEye, FaCheck, FaCalendar, FaPause, FaTimesCircle, FaPlus, FaListUl } from 'react-icons/fa';
+import { FaTimes, FaEye, FaCheck, FaCalendar, FaPause, FaTimesCircle, FaPlus, FaListUl, FaStar, FaStarHalfAlt, FaMinus } from 'react-icons/fa';
 import { db, auth } from '../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 
@@ -15,6 +15,9 @@ const AddToListModal = ({
   const [selectedList, setSelectedList] = useState(null);
   const [customLists, setCustomLists] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [userRating, setUserRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [ratingInput, setRatingInput] = useState('0');
 
   const statuses = [
     { value: 'watching', label: 'İzliyorum', icon: <FaEye />, color: '#3b82f6' },
@@ -27,6 +30,11 @@ const AddToListModal = ({
   useEffect(() => {
     if (isOpen && auth.currentUser) {
       fetchCustomLists();
+      setSelectedStatus('planned');
+      setUserRating(0);
+      setHoverRating(0);
+      setRatingInput('0');
+      setSelectedList(null);
     }
   }, [isOpen]);
 
@@ -45,14 +53,63 @@ const AddToListModal = ({
     }
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     setLoading(true);
-    onConfirm({
-      status: selectedStatus,
-      customListId: selectedList
-    });
-    setLoading(false);
+    try {
+      await onConfirm({
+        status: selectedStatus,
+        customListId: selectedList,
+        userRating: selectedStatus === 'completed' && userRating > 0 ? userRating : null
+      });
+    } catch (e) {
+      // error handled by parent
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleStarClick = (starIndex, isHalf) => {
+    const newRating = isHalf ? starIndex + 0.5 : starIndex + 1;
+    setUserRating(newRating);
+    setRatingInput(newRating.toString());
+  };
+
+  const handleRatingInputChange = (e) => {
+    const value = e.target.value;
+    setRatingInput(value);
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue) && numValue >= 0 && numValue <= 10) {
+      const rounded = Math.round(numValue * 2) / 2;
+      setUserRating(rounded);
+    }
+  };
+
+  const handleRatingInputBlur = () => {
+    setRatingInput(userRating.toString());
+  };
+
+  const getStarType = (starIndex, currentValue) => {
+    const starNumber = starIndex + 1;
+    if (currentValue >= starNumber) return 'full';
+    if (currentValue >= starNumber - 0.5) return 'half';
+    return 'empty';
+  };
+
+  const getRatingLabel = (r) => {
+    if (r === 0) return '';
+    if (r <= 1) return '😞 Berbat';
+    if (r <= 2) return '😕 Çok Kötü';
+    if (r <= 3) return '😐 Kötü';
+    if (r <= 4) return '🙁 Vasat Altı';
+    if (r <= 5) return '😶 Vasat';
+    if (r <= 6) return '🙂 Fena Değil';
+    if (r <= 7) return '😊 İyi';
+    if (r <= 8) return '😃 Çok İyi';
+    if (r <= 9) return '🤩 Harika';
+    return '🏆 Başyapıt';
+  };
+
+  const displayRating = hoverRating || userRating;
 
   if (!isOpen) return null;
 
@@ -82,6 +139,61 @@ const AddToListModal = ({
             ))}
           </div>
         </div>
+
+        {/* Tamamladım seçildiğinde puan verme alanı */}
+        {selectedStatus === 'completed' && (
+          <div className="add-list-section rating-section">
+            <h4><FaStar style={{ color: '#ffc107' }} /> Puanla (İsteğe Bağlı)</h4>
+            <div className="inline-rating-container">
+              <div className="star-rating small">
+                {[...Array(10)].map((_, index) => {
+                  const starType = getStarType(index, displayRating);
+                  return (
+                    <div 
+                      key={index} 
+                      className="star-wrapper"
+                      onMouseLeave={() => setHoverRating(0)}
+                    >
+                      <div 
+                        className="star-half left"
+                        onMouseEnter={() => setHoverRating(index + 0.5)}
+                        onClick={() => handleStarClick(index, true)}
+                      />
+                      <div 
+                        className="star-half right"
+                        onMouseEnter={() => setHoverRating(index + 1)}
+                        onClick={() => handleStarClick(index, false)}
+                      />
+                      <div className={`star-display ${starType}`}>
+                        {starType === 'half' ? (
+                          <FaStarHalfAlt className="star-icon" />
+                        ) : (
+                          <FaStar className="star-icon" />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="inline-rating-input">
+                <input
+                  type="number"
+                  min="0"
+                  max="10"
+                  step="0.5"
+                  value={ratingInput}
+                  onChange={handleRatingInputChange}
+                  onBlur={handleRatingInputBlur}
+                  className="rating-input"
+                />
+                <span className="rating-max-label">/ 10</span>
+              </div>
+              {userRating > 0 && (
+                <div className="rating-label">{getRatingLabel(userRating)}</div>
+              )}
+            </div>
+          </div>
+        )}
 
         {customLists.length > 0 && (
           <div className="add-list-section">

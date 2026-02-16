@@ -5,7 +5,7 @@ import { collection, addDoc, query, where, getDocs, doc, updateDoc, arrayUnion, 
 import MediaCard from '../components/MediaCard';
 import AddToListModal from '../components/AddToListModal';
 import { showToast } from '../components/Toast';
-import { fetchWithEnglishTitles, getTitle, API_KEY } from '../utils/tmdbUtils';
+import { fetchWithEnglishTitles, getTitle, API_KEY, fetchTvEpisodeCount } from '../utils/tmdbUtils';
 import { FaSearch, FaSpinner, FaFilter, FaTimes } from 'react-icons/fa';
 
 const GENRES = {
@@ -263,7 +263,7 @@ const Search = () => {
   };
 
   // Listeye ekleme fonksiyonu
-  const addToList = async ({ status, customListId }) => {
+  const addToList = async ({ status, customListId, userRating }) => {
     if (!selectedItem) return;
 
     const mediaType = selectedItemType === 'movie' ? 'movie' : 'tv';
@@ -295,7 +295,7 @@ const Search = () => {
         episodeCount: episodeCount,
         seasonCount: seasonCount,
         status: status,
-        userRating: null,
+        userRating: userRating || null,
         progress: 0,
         notes: '',
         startDate: null,
