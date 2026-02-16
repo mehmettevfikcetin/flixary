@@ -3354,52 +3354,45 @@ button {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
-.inline-rating-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
+.rating-section .star-rating-container {
+  padding: 0.5rem 0;
 }
 
-.inline-rating-container .star-rating.small {
-  display: flex;
-  justify-content: center;
-  gap: 0.15rem;
+.rating-section .star-wrapper {
+  width: 28px;
+  height: 28px;
 }
 
-.inline-rating-container .star-rating.small .star-wrapper {
-  width: 24px;
-  height: 24px;
+.rating-section .star-icon {
+  font-size: 1.5rem;
 }
 
-.inline-rating-container .star-rating.small .star-icon {
-  font-size: 1.3rem;
+.rating-section .rating-input-container {
+  margin: 0.75rem 0;
 }
 
-.inline-rating-input {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: var(--bg-secondary);
-  padding: 0.35rem 0.75rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
+.rating-section .rating-adjust-btn {
+  width: 34px;
+  height: 34px;
+  font-size: 0.8rem;
 }
 
-.inline-rating-input .rating-input {
-  width: 45px;
-  font-size: 1.1rem;
-  font-weight: 700;
+.rating-section .rating-input {
+  width: 50px;
+  font-size: 1.2rem;
 }
 
-.inline-rating-input .rating-max-label {
-  font-size: 0.85rem;
+.rating-section .rating-slider-container {
+  padding: 0 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
-.inline-rating-container .rating-label {
-  font-size: 0.85rem;
+.rating-section .rating-label {
+  text-align: center;
+  font-size: 0.9rem;
   color: #ffc107;
   font-weight: 500;
 }

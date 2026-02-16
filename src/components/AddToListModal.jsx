@@ -88,6 +88,18 @@ const AddToListModal = ({
     setRatingInput(userRating.toString());
   };
 
+  const incrementRating = () => {
+    const newRating = Math.min(10, userRating + 0.5);
+    setUserRating(newRating);
+    setRatingInput(newRating.toString());
+  };
+
+  const decrementRating = () => {
+    const newRating = Math.max(0, userRating - 0.5);
+    setUserRating(newRating);
+    setRatingInput(newRating.toString());
+  };
+
   const getStarType = (starIndex, currentValue) => {
     const starNumber = starIndex + 1;
     if (currentValue >= starNumber) return 'full';
@@ -144,8 +156,10 @@ const AddToListModal = ({
         {selectedStatus === 'completed' && (
           <div className="add-list-section rating-section">
             <h4><FaStar style={{ color: '#ffc107' }} /> Puanla (İsteğe Bağlı)</h4>
-            <div className="inline-rating-container">
-              <div className="star-rating small">
+            
+            {/* Yıldızlar */}
+            <div className="star-rating-container">
+              <div className="star-rating">
                 {[...Array(10)].map((_, index) => {
                   const starType = getStarType(index, displayRating);
                   return (
@@ -175,7 +189,14 @@ const AddToListModal = ({
                   );
                 })}
               </div>
-              <div className="inline-rating-input">
+            </div>
+
+            {/* Artı/Eksi Butonları + Elle Yazma */}
+            <div className="rating-input-container">
+              <button className="rating-adjust-btn" onClick={decrementRating}>
+                <FaMinus />
+              </button>
+              <div className="rating-input-wrapper">
                 <input
                   type="number"
                   min="0"
@@ -188,10 +209,39 @@ const AddToListModal = ({
                 />
                 <span className="rating-max-label">/ 10</span>
               </div>
-              {userRating > 0 && (
-                <div className="rating-label">{getRatingLabel(userRating)}</div>
-              )}
+              <button className="rating-adjust-btn" onClick={incrementRating}>
+                <FaPlus />
+              </button>
             </div>
+
+            {/* Slider */}
+            <div className="rating-slider-container">
+              <input
+                type="range"
+                min="0"
+                max="10"
+                step="0.5"
+                value={userRating}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  setUserRating(val);
+                  setRatingInput(val.toString());
+                }}
+                className="rating-slider"
+                style={{
+                  background: `linear-gradient(to right, #ffc107 0%, #ffc107 ${userRating * 10}%, #2a3a4f ${userRating * 10}%, #2a3a4f 100%)`
+                }}
+              />
+              <div className="slider-labels">
+                <span>0</span>
+                <span>5</span>
+                <span>10</span>
+              </div>
+            </div>
+
+            {userRating > 0 && (
+              <div className="rating-label">{getRatingLabel(userRating)}</div>
+            )}
           </div>
         )}
 
