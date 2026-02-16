@@ -1490,6 +1490,7 @@ button {
 .watchlist-card:hover {
   transform: translateY(-5px);
   box-shadow: var(--shadow);
+  z-index: 10;
 }
 
 .watchlist-card .card-image {
@@ -1569,14 +1570,6 @@ button {
   width: 24px;
   height: 24px;
   font-size: 0.75rem;
-}
-
-.card-note-wrapper .note-popup {
-  bottom: auto;
-  top: calc(100% + 8px);
-  right: 0;
-  left: auto;
-  width: 240px;
 }
 
 .watchlist-card .card-actions {
@@ -1735,6 +1728,26 @@ button {
   overflow-y: auto;
   word-break: break-word;
   white-space: pre-wrap;
+}
+
+/* Fixed Note Popup (portal) */
+.note-popup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: transparent;
+}
+
+.note-popup-fixed {
+  position: fixed;
+  z-index: 9999;
+  width: 280px;
+  max-height: 260px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  animation: notePopupIn 0.2s ease;
 }
 
 .list-item-status {

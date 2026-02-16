@@ -29,3 +29,11 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Sensitive files
+APİ KEY.txt
+API KEY.txt
+*.key
+*.pem
+*.secret
+flixary logo.png

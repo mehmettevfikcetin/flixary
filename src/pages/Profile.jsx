@@ -302,6 +302,20 @@ const Profile = () => {
 
   // Not popup
   const [notePopupId, setNotePopupId] = useState(null);
+  const [notePopupPos, setNotePopupPos] = useState({ top: 0, left: 0 });
+
+  const openNotePopup = (e, docId) => {
+    if (notePopupId === docId) {
+      setNotePopupId(null);
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    setNotePopupPos({
+      top: rect.bottom + 8,
+      left: Math.min(rect.left, window.innerWidth - 290)
+    });
+    setNotePopupId(docId);
+  };
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -856,19 +870,10 @@ const Profile = () => {
                       <button 
                         className="note-indicator-btn"
                         title="Notu göster"
-                        onClick={() => setNotePopupId(notePopupId === item.docId ? null : item.docId)}
+                        onClick={(e) => openNotePopup(e, item.docId)}
                       >
                         <FaComment />
                       </button>
-                      {notePopupId === item.docId && (
-                        <div className="note-popup">
-                          <div className="note-popup-header">
-                            <span>📝 Not</span>
-                            <button onClick={() => setNotePopupId(null)}><FaTimes /></button>
-                          </div>
-                          <p className="note-popup-text">{item.notes}</p>
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
@@ -933,19 +938,10 @@ const Profile = () => {
                   <button 
                     className="note-indicator-btn"
                     title="Notu göster"
-                    onClick={() => setNotePopupId(notePopupId === item.docId ? null : item.docId)}
+                    onClick={(e) => openNotePopup(e, item.docId)}
                   >
                     <FaComment />
                   </button>
-                  {notePopupId === item.docId && (
-                    <div className="note-popup">
-                      <div className="note-popup-header">
-                        <span>📝 Not</span>
-                        <button onClick={() => setNotePopupId(null)}><FaTimes /></button>
-                      </div>
-                      <p className="note-popup-text">{item.notes}</p>
-                    </div>
-                  )}
                 </div>
               ) : <div />}
               <div 
@@ -1126,6 +1122,24 @@ const Profile = () => {
         type={showFollowModal}
         title={showFollowModal === 'followers' ? 'Takipçiler' : 'Takip Edilenler'}
       />
+
+      {/* Note Popup (Fixed Position) */}
+      {notePopupId && (() => {
+        const noteItem = filteredList.find(i => i.docId === notePopupId);
+        if (!noteItem || !noteItem.notes) return null;
+        return (
+          <>
+            <div className="note-popup-overlay" onClick={() => setNotePopupId(null)} />
+            <div className="note-popup note-popup-fixed" style={{ top: notePopupPos.top, left: notePopupPos.left }}>
+              <div className="note-popup-header">
+                <span>📝 Not</span>
+                <button onClick={() => setNotePopupId(null)}><FaTimes /></button>
+              </div>
+              <p className="note-popup-text">{noteItem.notes}</p>
+            </div>
+          </>
+        );
+      })()}
 
       {/* Add to Custom List Modal */}
       <AddToCustomListModal

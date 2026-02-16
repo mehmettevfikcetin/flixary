@@ -296,7 +296,7 @@ const Search = () => {
         seasonCount: seasonCount,
         status: status,
         userRating: userRating || null,
-        progress: 0,
+        progress: (status === 'Tamamladım' && mediaType === 'tv' && episodeCount) ? episodeCount : 0,
         notes: notes || '',
         startDate: startDate || null,
         endDate: endDate || null,
