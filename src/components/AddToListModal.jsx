@@ -163,45 +163,10 @@ const AddToListModal = ({
 
         {/* Tamamladım seçildiğinde puan verme alanı */}
         {selectedStatus === 'completed' && (
-          <div className="add-list-section rating-section">
+          <div className="add-list-section rating-section-compact">
             <h4><FaStar style={{ color: '#ffc107' }} /> Puanla (İsteğe Bağlı)</h4>
             
-            {/* Yıldızlar */}
-            <div className="star-rating-container">
-              <div className="star-rating">
-                {[...Array(10)].map((_, index) => {
-                  const starType = getStarType(index, displayRating);
-                  return (
-                    <div 
-                      key={index} 
-                      className="star-wrapper"
-                      onMouseLeave={() => setHoverRating(0)}
-                    >
-                      <div 
-                        className="star-half left"
-                        onMouseEnter={() => setHoverRating(index + 0.5)}
-                        onClick={() => handleStarClick(index, true)}
-                      />
-                      <div 
-                        className="star-half right"
-                        onMouseEnter={() => setHoverRating(index + 1)}
-                        onClick={() => handleStarClick(index, false)}
-                      />
-                      <div className={`star-display ${starType}`}>
-                        {starType === 'half' ? (
-                          <FaStarHalfAlt className="star-icon" />
-                        ) : (
-                          <FaStar className="star-icon" />
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Artı/Eksi Butonları + Elle Yazma */}
-            <div className="rating-input-container">
+            <div className="rating-compact-row">
               <button className="rating-adjust-btn" onClick={decrementRating}>
                 <FaMinus />
               </button>
@@ -221,9 +186,11 @@ const AddToListModal = ({
               <button className="rating-adjust-btn" onClick={incrementRating}>
                 <FaPlus />
               </button>
+              {userRating > 0 && (
+                <span className="rating-label-inline">{getRatingLabel(userRating)}</span>
+              )}
             </div>
 
-            {/* Slider */}
             <div className="rating-slider-container">
               <input
                 type="range"
@@ -247,10 +214,6 @@ const AddToListModal = ({
                 <span>10</span>
               </div>
             </div>
-
-            {userRating > 0 && (
-              <div className="rating-label">{getRatingLabel(userRating)}</div>
-            )}
           </div>
         )}
 

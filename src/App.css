@@ -3574,6 +3574,103 @@ button {
   font-weight: 500;
 }
 
+/* Kompakt Rating Section (AddToListModal) */
+.rating-section-compact {
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  padding: 0.8rem;
+  border: 1px solid rgba(255, 193, 7, 0.2);
+}
+
+.rating-section-compact h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.rating-compact-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.rating-compact-row .rating-adjust-btn {
+  width: 32px;
+  height: 32px;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rating-compact-row .rating-adjust-btn:hover {
+  background: var(--accent-primary);
+  color: white;
+}
+
+.rating-compact-row .rating-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 0.3rem 0.5rem;
+}
+
+.rating-compact-row .rating-input {
+  width: 40px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: center;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.rating-compact-row .rating-max-label {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.rating-label-inline {
+  font-size: 0.8rem;
+  color: #ffc107;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.rating-section-compact .rating-slider-container {
+  padding: 0 0.25rem;
+}
+
+.rating-section-compact .rating-slider {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.rating-section-compact .slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
 /* Tarih alanları */
 .date-fields {
   display: flex;

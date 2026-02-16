@@ -1010,6 +1010,8 @@ const Profile = () => {
         currentStatus={selectedItem?.status}
         currentProgress={selectedItem?.progress || 0}
         currentNotes={selectedItem?.notes || ''}
+        currentStartDate={selectedItem?.startDate || ''}
+        currentEndDate={selectedItem?.endDate || ''}
         title={selectedItem?.title || ''}
         totalEpisodes={selectedItem?.episodeCount}
         mediaType={selectedItem?.mediaType || 'movie'}
