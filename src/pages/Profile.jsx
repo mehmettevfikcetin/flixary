@@ -304,16 +304,34 @@ const Profile = () => {
   const [notePopupId, setNotePopupId] = useState(null);
   const [notePopupPos, setNotePopupPos] = useState({ top: 0, left: 0 });
 
+  // Scroll olunca popup'ı kapat
+  useEffect(() => {
+    if (!notePopupId) return;
+    const handleScroll = () => setNotePopupId(null);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => window.removeEventListener('scroll', handleScroll, true);
+  }, [notePopupId]);
+
   const openNotePopup = (e, docId) => {
+    e.stopPropagation();
     if (notePopupId === docId) {
       setNotePopupId(null);
       return;
     }
     const rect = e.currentTarget.getBoundingClientRect();
-    setNotePopupPos({
-      top: rect.bottom + 8,
-      left: Math.min(rect.left, window.innerWidth - 290)
-    });
+    const popupWidth = 280;
+    const popupHeight = 200;
+    let top = rect.bottom + 8;
+    let left = rect.left;
+    // Sağa taşmayı önle
+    if (left + popupWidth > window.innerWidth - 16) {
+      left = window.innerWidth - popupWidth - 16;
+    }
+    // Alta taşmayı önle - üste aç
+    if (top + popupHeight > window.innerHeight - 16) {
+      top = rect.top - popupHeight - 8;
+    }
+    setNotePopupPos({ top, left });
     setNotePopupId(docId);
   };
 
@@ -1130,7 +1148,7 @@ const Profile = () => {
         return (
           <>
             <div className="note-popup-overlay" onClick={() => setNotePopupId(null)} />
-            <div className="note-popup note-popup-fixed" style={{ top: notePopupPos.top, left: notePopupPos.left }}>
+            <div className="note-popup-fixed" style={{ top: notePopupPos.top, left: notePopupPos.left }}>
               <div className="note-popup-header">
                 <span>📝 Not</span>
                 <button onClick={() => setNotePopupId(null)}><FaTimes /></button>

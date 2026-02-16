@@ -155,7 +155,7 @@ const Discover = ({ type = 'movie' }) => {
         seasonCount: seasonCount,
         status: status,
         userRating: userRating || null,
-        progress: (status === 'Tamamladım' && mediaType === 'tv' && episodeCount) ? episodeCount : 0,
+        progress: (status === 'completed' && mediaType === 'tv' && episodeCount) ? episodeCount : 0,
         notes: notes || '',
         startDate: startDate || null,
         endDate: endDate || null,
