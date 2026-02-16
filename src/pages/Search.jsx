@@ -263,7 +263,7 @@ const Search = () => {
   };
 
   // Listeye ekleme fonksiyonu
-  const addToList = async ({ status, customListId, userRating }) => {
+  const addToList = async ({ status, customListId, userRating, startDate, endDate, notes }) => {
     if (!selectedItem) return;
 
     const mediaType = selectedItemType === 'movie' ? 'movie' : 'tv';
@@ -297,9 +297,9 @@ const Search = () => {
         status: status,
         userRating: userRating || null,
         progress: 0,
-        notes: '',
-        startDate: null,
-        endDate: null,
+        notes: notes || '',
+        startDate: startDate || null,
+        endDate: endDate || null,
         rewatchCount: 0,
         favorite: false,
         createdAt: new Date(),

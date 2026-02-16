@@ -1622,8 +1622,9 @@ button {
 /* Not Butonu & Popup */
 .list-item-note-wrapper {
   position: relative;
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  margin-right: 0.4rem;
 }
 
 .note-indicator-btn {
@@ -3487,6 +3488,70 @@ button {
   font-size: 0.9rem;
   color: #ffc107;
   font-weight: 500;
+}
+
+/* Tarih alanları */
+.date-fields {
+  display: flex;
+  gap: 1rem;
+}
+
+.date-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.date-field label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.date-input {
+  padding: 0.6rem 0.75rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.date-input:focus {
+  border-color: var(--accent-primary);
+}
+
+/* Not alanı */
+.note-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 60px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.note-textarea:focus {
+  border-color: var(--accent-primary);
+}
+
+.note-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.note-char-count {
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
 }
 
 /* ===================================

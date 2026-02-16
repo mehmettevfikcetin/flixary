@@ -107,7 +107,7 @@ const Home = () => {
   };
 
   // Listeye ekleme fonksiyonu
-  const addToList = async ({ status, customListId, userRating }) => {
+  const addToList = async ({ status, customListId, userRating, startDate, endDate, notes }) => {
     if (!selectedItem) return;
     
     const mediaType = selectedType === 'movie' ? 'movie' : 'tv';
@@ -144,7 +144,9 @@ const Home = () => {
         status: status,
         userRating: userRating || null,
         progress: 0,
-        notes: '',
+        notes: notes || '',
+        startDate: startDate || null,
+        endDate: endDate || null,
         createdAt: new Date(),
         updatedAt: new Date()
       });

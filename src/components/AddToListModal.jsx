@@ -18,6 +18,9 @@ const AddToListModal = ({
   const [userRating, setUserRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [ratingInput, setRatingInput] = useState('0');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [notes, setNotes] = useState('');
 
   const statuses = [
     { value: 'watching', label: 'İzliyorum', icon: <FaEye />, color: '#3b82f6' },
@@ -35,6 +38,9 @@ const AddToListModal = ({
       setHoverRating(0);
       setRatingInput('0');
       setSelectedList(null);
+      setStartDate('');
+      setEndDate('');
+      setNotes('');
     }
   }, [isOpen]);
 
@@ -59,7 +65,10 @@ const AddToListModal = ({
       await onConfirm({
         status: selectedStatus,
         customListId: selectedList,
-        userRating: selectedStatus === 'completed' && userRating > 0 ? userRating : null
+        userRating: selectedStatus === 'completed' && userRating > 0 ? userRating : null,
+        startDate: startDate || null,
+        endDate: endDate || null,
+        notes: notes.trim() || ''
       });
     } catch (e) {
       // error handled by parent
@@ -244,6 +253,45 @@ const AddToListModal = ({
             )}
           </div>
         )}
+
+        {/* Tarihler */}
+        <div className="add-list-section">
+          <h4>📅 Tarihler (İsteğe Bağlı)</h4>
+          <div className="date-fields">
+            <div className="date-field">
+              <label>Başlama Tarihi</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="date-input"
+              />
+            </div>
+            <div className="date-field">
+              <label>Bitiş Tarihi</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="date-input"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Not */}
+        <div className="add-list-section">
+          <h4>📝 Not (İsteğe Bağlı)</h4>
+          <textarea
+            className="note-textarea"
+            placeholder="Bu yapım hakkında not ekleyin..."
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={3}
+            maxLength={500}
+          />
+          <div className="note-char-count">{notes.length}/500</div>
+        </div>
 
         {customLists.length > 0 && (
           <div className="add-list-section">
