@@ -1483,7 +1483,7 @@ button {
 .watchlist-card {
   background: var(--bg-card);
   border-radius: var(--radius);
-  overflow: hidden;
+  overflow: visible;
   transition: var(--transition);
 }
 
@@ -1495,6 +1495,8 @@ button {
 .watchlist-card .card-image {
   position: relative;
   display: block;
+  overflow: hidden;
+  border-radius: var(--radius) var(--radius) 0 0;
 }
 
 .watchlist-card img {
@@ -1529,6 +1531,8 @@ button {
 
 .watchlist-card .card-content {
   padding: 0.8rem;
+  overflow: visible;
+  position: relative;
 }
 
 .watchlist-card .card-title {
