@@ -124,7 +124,7 @@ const Discover = ({ type = 'movie' }) => {
 
   // Listeye ekleme fonksiyonu
   const addToList = async ({ status, customListId, userRating, startDate, endDate, notes }) => {
-    if (!selectedItem) return;
+    if (!selectedItem || !auth.currentUser) return;
 
     // Başlık seçimi: İngilizce > Orijinal > Türkçe
     const title = getTitle(selectedItem, mediaType);
@@ -150,7 +150,7 @@ const Discover = ({ type = 'movie' }) => {
         rating: selectedItem.vote_average,
         releaseDate: releaseDate,
         genres: selectedItem.genre_ids || [],
-        runtime: mediaType === 'movie' ? selectedItem.runtime : null,
+        runtime: mediaType === 'movie' ? (selectedItem.runtime || null) : null,
         episodeCount: episodeCount,
         seasonCount: seasonCount,
         status: status,
@@ -159,6 +159,8 @@ const Discover = ({ type = 'movie' }) => {
         notes: notes || '',
         startDate: startDate || null,
         endDate: endDate || null,
+        rewatchCount: 0,
+        favorite: false,
         createdAt: new Date(),
         updatedAt: new Date()
       });

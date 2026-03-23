@@ -264,7 +264,7 @@ const Search = () => {
 
   // Listeye ekleme fonksiyonu
   const addToList = async ({ status, customListId, userRating, startDate, endDate, notes }) => {
-    if (!selectedItem) return;
+    if (!selectedItem || !auth.currentUser) return;
 
     const mediaType = selectedItemType === 'movie' ? 'movie' : 'tv';
     // Başlık seçimi: İngilizce > Orijinal > Türkçe
@@ -291,7 +291,7 @@ const Search = () => {
         rating: selectedItem.vote_average,
         releaseDate: releaseDate,
         genres: selectedItem.genre_ids || [],
-        runtime: mediaType === 'movie' ? selectedItem.runtime : null,
+        runtime: mediaType === 'movie' ? (selectedItem.runtime || null) : null,
         episodeCount: episodeCount,
         seasonCount: seasonCount,
         status: status,
