@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { db, auth } from '../firebase';
-import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, getDocs, arrayUnion, increment } from 'firebase/firestore';
 import axios from 'axios';
 import { FaStar, FaPlay, FaClock, FaCalendar, FaPlus, FaCheck, FaEdit, FaTrash, FaArrowLeft } from 'react-icons/fa';
 import RatingModal from '../components/RatingModal';
 import StatusModal from '../components/StatusModal';
+import AddToListModal from '../components/AddToListModal';
 import MediaCard from '../components/MediaCard';
 import { showToast } from '../components/Toast';
 import { fetchWithEnglishTitles, fetchDetailWithEnglishTitle, getTitle, API_KEY } from '../utils/tmdbUtils';
@@ -29,6 +30,8 @@ const MediaDetail = () => {
   const [loading, setLoading] = useState(true);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedSimilar, setSelectedSimilar] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
@@ -190,13 +193,21 @@ const MediaDetail = () => {
     updateEntry({ userRating: rating });
   };
 
-  // Benzer yapımları listeye ekleme fonksiyonu
-  const addSimilarToList = async (item, itemType) => {
+  // Benzer yapımlar için modal aç
+  const openAddModal = (item, itemType) => {
     if (!auth.currentUser) {
       showToast('Lütfen giriş yapın', 'error');
       return;
     }
+    setSelectedSimilar({ item, type: itemType });
+    setShowAddModal(true);
+  };
 
+  // Benzer yapımları listeye ekleme fonksiyonu (modal onayı)
+  const addSimilarConfirm = async (modalData) => {
+    if (!auth.currentUser || !selectedSimilar) return;
+
+    const { item, type: itemType } = selectedSimilar;
     const mediaType = itemType === 'series' ? 'tv' : itemType;
     const title = getTitle(item, mediaType);
     const releaseDate = mediaType === 'movie' ? item.release_date : item.first_air_date;
@@ -215,19 +226,34 @@ const MediaDetail = () => {
         runtime: null,
         episodeCount: null,
         seasonCount: null,
-        status: 'planned',
-        userRating: null,
+        status: modalData.status,
+        userRating: modalData.userRating,
         progress: 0,
-        notes: '',
-        startDate: null,
-        endDate: null,
+        notes: modalData.notes || '',
+        startDate: modalData.startDate,
+        endDate: modalData.endDate,
         rewatchCount: 0,
         favorite: false,
         createdAt: new Date(),
         updatedAt: new Date()
       });
 
+      // Özel listeye de ekle
+      if (modalData.customListId) {
+        await updateDoc(doc(db, "customLists", modalData.customListId), {
+          items: arrayUnion({
+            tmdbId: item.id,
+            mediaType: mediaType,
+            addedAt: new Date()
+          }),
+          itemCount: increment(1),
+          updatedAt: new Date()
+        });
+      }
+
       showToast(`"${title}" listenize eklendi!`, 'success');
+      setShowAddModal(false);
+      setSelectedSimilar(null);
     } catch (error) {
       console.error("Ekleme hatası:", error);
       showToast('Ekleme başarısız', 'error');
@@ -467,7 +493,7 @@ const MediaDetail = () => {
                   key={item.id}
                   item={item}
                   type={mediaType}
-                  onAddToList={addSimilarToList}
+                  onAddToList={openAddModal}
                 />
               ))}
             </div>
@@ -494,6 +520,15 @@ const MediaDetail = () => {
         title={title}
         totalEpisodes={media.number_of_episodes}
         mediaType={mediaType}
+      />
+
+      <AddToListModal
+        isOpen={showAddModal}
+        onClose={() => { setShowAddModal(false); setSelectedSimilar(null); }}
+        onConfirm={addSimilarConfirm}
+        item={selectedSimilar?.item}
+        type={selectedSimilar?.type}
+        title={selectedSimilar ? getTitle(selectedSimilar.item, selectedSimilar.type) : ''}
       />
     </div>
   );
