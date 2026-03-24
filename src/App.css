@@ -9115,3 +9115,1156 @@ html, body {
     border: 2px solid currentColor;
   }
 }
+
+/* ===================================
+   DESKTOP LAYOUT OPTIMIZATION
+   Production-grade desktop experience
+   NO MOBILE QUERIES MODIFIED BELOW
+   =================================== */
+
+/* ===================================
+   DESKTOP GRID SYSTEM (min-width: 900px+)
+   =================================== */
+
+/* Base desktop improvements - 900px+ */
+@media (min-width: 900px) {
+  /* Grid layouts with proper column counts */
+  .media-grid,
+  .watchlist-grid,
+  .results-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .similar-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .list-items-grid {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .user-watchlist-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1.5rem;
+  }
+
+  /* Container max-widths with centered alignment */
+  .content-section,
+  .search-page,
+  .discover-page,
+  .profile-page {
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 1.5rem 2rem;
+  }
+
+  /* Section headers */
+  .section-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .page-header h1 {
+    font-size: 2.25rem;
+  }
+
+  /* Stats grid - 4 columns on desktop */
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+  }
+
+  .stat-card {
+    padding: 1.25rem;
+  }
+
+  .stat-value {
+    font-size: 1.75rem;
+  }
+}
+
+/* Standard desktop - 1024px+ */
+@media (min-width: 1024px) {
+  /* Larger grid items for more breathing room */
+  .media-grid,
+  .watchlist-grid,
+  .results-grid {
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 1.75rem;
+  }
+
+  .similar-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1.5rem;
+  }
+
+  /* Enhanced section spacing */
+  .content-section {
+    padding: 2rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .media-section {
+    margin-bottom: 3.5rem;
+  }
+
+  /* Hero section for desktop */
+  .hero-section {
+    height: 65vh;
+    min-height: 520px;
+    max-height: 700px;
+  }
+
+  .hero-title {
+    font-size: 2.75rem;
+    letter-spacing: -0.02em;
+  }
+
+  .hero-overview {
+    font-size: 1.05rem;
+    max-width: 650px;
+  }
+
+  .hero-content {
+    padding: 2.5rem;
+  }
+
+  /* Detail page layout */
+  .detail-main {
+    grid-template-columns: 280px 1fr;
+    gap: 2.5rem;
+  }
+
+  .detail-title {
+    font-size: 2.5rem;
+  }
+
+  /* Profile page */
+  .profile-banner {
+    height: 220px;
+  }
+
+  .profile-avatar {
+    width: 130px;
+    height: 130px;
+  }
+
+  .profile-info {
+    gap: 1.75rem;
+  }
+
+  /* Search page */
+  .search-form {
+    max-width: 700px;
+  }
+
+  /* Filter improvements */
+  .search-filters {
+    padding: 1.75rem;
+    gap: 1.25rem;
+  }
+}
+
+/* Wide desktop - 1280px+ */
+@media (min-width: 1280px) {
+  /* Optimal grid sizing for large screens */
+  .media-grid,
+  .watchlist-grid,
+  .results-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 2rem;
+  }
+
+  .similar-grid {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .list-items-grid {
+    grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+    gap: 1.75rem;
+  }
+
+  /* Larger containers */
+  .content-section,
+  .search-page,
+  .discover-page {
+    padding: 2rem 3rem;
+  }
+
+  .profile-page {
+    padding: 0 3rem 2rem;
+  }
+
+  /* Hero enhancements */
+  .hero-section {
+    height: 68vh;
+    min-height: 550px;
+  }
+
+  .hero-title {
+    font-size: 3rem;
+  }
+
+  .hero-overview {
+    font-size: 1.1rem;
+  }
+
+  /* Detail page */
+  .detail-main {
+    grid-template-columns: 300px 1fr;
+    gap: 3rem;
+  }
+
+  .detail-content {
+    padding: 2rem 3rem;
+  }
+
+  /* Cast grid with more columns */
+  .cast-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.25rem;
+  }
+
+  /* Stats container */
+  .stats-container {
+    padding: 2rem;
+  }
+
+  .stats-grid {
+    gap: 1.5rem;
+  }
+}
+
+/* Extra wide desktop - 1440px+ */
+@media (min-width: 1440px) {
+  /* Maximum comfortable grid sizing */
+  .media-grid,
+  .watchlist-grid,
+  .results-grid {
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 2rem;
+  }
+
+  .similar-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.75rem;
+  }
+
+  /* Container constraints for ultra-wide */
+  .content-section,
+  .search-page,
+  .discover-page,
+  .profile-page {
+    max-width: 1600px;
+  }
+
+  .detail-content {
+    max-width: 1400px;
+  }
+
+  /* Hero for large screens */
+  .hero-section {
+    height: 70vh;
+    max-height: 750px;
+  }
+
+  .hero-title {
+    font-size: 3.25rem;
+  }
+
+  .hero-content {
+    max-width: 1600px;
+    padding: 3rem;
+  }
+
+  /* Detail improvements */
+  .detail-main {
+    grid-template-columns: 320px 1fr;
+    gap: 3.5rem;
+  }
+
+  .detail-title {
+    font-size: 2.75rem;
+  }
+}
+
+/* ===================================
+   MEDIA CARD DESKTOP OPTIMIZATION
+   =================================== */
+
+@media (min-width: 900px) {
+  /* Card structure with flexbox for proper button positioning */
+  .media-card {
+    display: flex;
+    flex-direction: column;
+    flex: none;
+    width: 100%;
+    min-height: 340px;
+  }
+
+  /* Card image with proper aspect ratio */
+  .media-card .card-image-wrapper {
+    flex-shrink: 0;
+  }
+
+  .media-card img {
+    height: auto;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+  }
+
+  /* Card info section - grows to fill space */
+  .media-card .card-info,
+  .card-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0.85rem;
+  }
+
+  /* Title section */
+  .card-title {
+    font-size: 0.95rem;
+    margin-bottom: 0.35rem;
+    line-height: 1.3;
+  }
+
+  .card-year {
+    font-size: 0.8rem;
+    margin-bottom: auto;
+  }
+
+  /* Card actions - always at bottom */
+  .card-actions {
+    margin-top: auto;
+    padding-top: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .btn-add,
+  .btn-in-list {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.8rem;
+    min-height: 36px;
+  }
+
+  /* Watchlist card improvements */
+  .watchlist-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 360px;
+  }
+
+  .watchlist-card .card-image {
+    flex-shrink: 0;
+  }
+
+  .watchlist-card img {
+    height: auto;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+  }
+
+  .watchlist-card .card-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0.85rem;
+  }
+
+  .watchlist-card .card-actions {
+    margin-top: auto;
+  }
+
+  /* List item card */
+  .list-item-card {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .item-poster {
+    flex-shrink: 0;
+  }
+
+  .item-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0.85rem;
+  }
+
+  .item-actions {
+    margin-top: auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  .media-card {
+    min-height: 360px;
+  }
+
+  .media-card .card-info,
+  .card-info {
+    padding: 1rem;
+  }
+
+  .card-title {
+    font-size: 1rem;
+  }
+
+  .btn-add,
+  .btn-in-list {
+    padding: 0.55rem 0.75rem;
+    font-size: 0.82rem;
+    min-height: 38px;
+  }
+
+  .watchlist-card {
+    min-height: 380px;
+  }
+
+  .watchlist-card .card-content {
+    padding: 1rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .media-card {
+    min-height: 380px;
+  }
+
+  .card-title {
+    font-size: 1.02rem;
+  }
+
+  .watchlist-card {
+    min-height: 400px;
+  }
+}
+
+/* ===================================
+   DESKTOP TYPOGRAPHY SCALING
+   =================================== */
+
+@media (min-width: 900px) {
+  /* Page titles */
+  .search-header h1,
+  .user-search-header h1 {
+    font-size: 2rem;
+  }
+
+  /* Section titles */
+  .media-section h2 {
+    font-size: 1.5rem;
+  }
+
+  .custom-lists-header h3 {
+    font-size: 1.2rem;
+  }
+
+  /* Profile typography */
+  .profile-details h1,
+  .profile-name-row h1 {
+    font-size: 2rem;
+  }
+
+  /* Stats card typography */
+  .stat-label {
+    font-size: 0.9rem;
+  }
+
+  /* Modal titles */
+  .modal-content h3 {
+    font-size: 1.35rem;
+  }
+
+  .modal-title {
+    font-size: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .search-header h1,
+  .user-search-header h1 {
+    font-size: 2.25rem;
+  }
+
+  .media-section h2 {
+    font-size: 1.6rem;
+  }
+
+  .profile-details h1,
+  .profile-name-row h1 {
+    font-size: 2.15rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .search-header h1,
+  .user-search-header h1 {
+    font-size: 2.5rem;
+  }
+
+  .media-section h2 {
+    font-size: 1.7rem;
+  }
+
+  .profile-details h1,
+  .profile-name-row h1 {
+    font-size: 2.25rem;
+  }
+}
+
+/* ===================================
+   DESKTOP HOVER ENHANCEMENTS
+   =================================== */
+
+@media (min-width: 900px) and (hover: hover) {
+  /* Card hover states */
+  .media-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  }
+
+  .watchlist-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 14px 35px rgba(0, 0, 0, 0.4);
+  }
+
+  .list-item-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  }
+
+  .user-watchlist-card:hover {
+    transform: translateY(-6px);
+  }
+
+  /* Button hover improvements */
+  .btn-primary:hover,
+  .btn-add:hover,
+  .btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(61, 180, 242, 0.3);
+  }
+
+  /* Nav link hover */
+  .nav-link:hover {
+    transform: translateY(-1px);
+  }
+
+  /* Genre tag hover */
+  .genre-tag:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(61, 180, 242, 0.25);
+  }
+}
+
+/* ===================================
+   DESKTOP SPECIFIC COMPONENT FIXES
+   =================================== */
+
+@media (min-width: 900px) {
+  /* Navbar desktop optimization */
+  .navbar-container {
+    max-width: 1600px;
+    padding: 0 2.5rem;
+  }
+
+  .navbar-search input {
+    width: 240px;
+  }
+
+  .nav-links {
+    gap: 1.75rem;
+  }
+
+  /* Genre tags with better spacing */
+  .genre-tags {
+    gap: 0.6rem;
+  }
+
+  .genre-tag {
+    padding: 0.55rem 1.1rem;
+    font-size: 0.92rem;
+  }
+
+  /* Search filters desktop layout */
+  .search-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 1.5rem;
+  }
+
+  .filter-item {
+    min-width: 160px;
+  }
+
+  /* View controls */
+  .view-controls {
+    gap: 1.25rem;
+  }
+
+  /* Status tabs desktop */
+  .status-tabs {
+    gap: 0.6rem;
+  }
+
+  .status-tabs button {
+    padding: 0.7rem 1.25rem;
+    font-size: 0.95rem;
+  }
+
+  /* Media row for horizontal scrolling sections */
+  .media-row {
+    gap: 1.25rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .media-row .media-card,
+  .media-row .watching-card,
+  .media-row .recent-card {
+    flex: 0 0 180px;
+  }
+
+  .media-row .media-card img,
+  .media-row .watching-card img,
+  .media-row .recent-card img {
+    height: 270px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .navbar-search input {
+    width: 280px;
+  }
+
+  .media-row .media-card,
+  .media-row .watching-card,
+  .media-row .recent-card {
+    flex: 0 0 190px;
+  }
+
+  .media-row .media-card img,
+  .media-row .watching-card img,
+  .media-row .recent-card img {
+    height: 285px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .navbar-container {
+    padding: 0 3rem;
+  }
+
+  .navbar-search input {
+    width: 320px;
+  }
+
+  .media-row .media-card,
+  .media-row .watching-card,
+  .media-row .recent-card {
+    flex: 0 0 200px;
+  }
+
+  .media-row .media-card img,
+  .media-row .watching-card img,
+  .media-row .recent-card img {
+    height: 300px;
+  }
+}
+
+/* ===================================
+   DESKTOP MODAL IMPROVEMENTS
+   =================================== */
+
+@media (min-width: 900px) {
+  .modal-content {
+    padding: 2.25rem;
+  }
+
+  .status-options {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.6rem;
+  }
+
+  .status-btn {
+    padding: 0.9rem 0.6rem;
+    font-size: 0.78rem;
+  }
+
+  /* Rating modal */
+  .star-wrapper {
+    width: 36px;
+    height: 36px;
+  }
+
+  .star-icon {
+    font-size: 2rem;
+  }
+
+  /* Add to list modal */
+  .add-list-modal {
+    max-width: 520px;
+  }
+
+  .status-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0.6rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .modal-content {
+    padding: 2.5rem;
+  }
+
+  .star-wrapper {
+    width: 38px;
+    height: 38px;
+  }
+
+  .star-icon {
+    font-size: 2.1rem;
+  }
+}
+
+/* ===================================
+   DESKTOP LIST VIEW IMPROVEMENTS
+   =================================== */
+
+@media (min-width: 900px) {
+  .watchlist-list-item {
+    grid-template-columns: 70px 1fr 40px 140px 110px auto;
+    gap: 1.25rem;
+    padding: 1rem;
+  }
+
+  .list-item-poster img {
+    width: 70px;
+    height: 105px;
+  }
+
+  .list-item-title {
+    font-size: 0.95rem;
+  }
+
+  .list-item-meta {
+    font-size: 0.88rem;
+    gap: 1.25rem;
+  }
+
+  .list-item-actions button {
+    padding: 0.55rem 0.75rem;
+    font-size: 0.88rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .watchlist-list-item {
+    grid-template-columns: 75px 1fr 40px 150px 120px auto;
+    gap: 1.5rem;
+    padding: 1.1rem 1.25rem;
+  }
+
+  .list-item-poster img {
+    width: 75px;
+    height: 112px;
+  }
+
+  .list-item-title {
+    font-size: 1rem;
+  }
+}
+
+/* ===================================
+   DESKTOP USER PROFILE IMPROVEMENTS
+   =================================== */
+
+@media (min-width: 900px) {
+  .user-profile-page {
+    max-width: 1400px;
+  }
+
+  .user-banner {
+    height: 280px;
+  }
+
+  .user-avatar-large {
+    width: 130px;
+    height: 130px;
+  }
+
+  .user-profile-info {
+    gap: 1.75rem;
+    padding: 0 2.5rem;
+    margin-top: -70px;
+  }
+
+  .user-details h1 {
+    font-size: 2rem;
+  }
+
+  .user-stats-bar {
+    gap: 4rem;
+    margin: 0 2.5rem 2.5rem;
+    padding: 1.75rem;
+  }
+
+  .user-custom-lists-section,
+  .user-status-tabs,
+  .user-watchlist-grid {
+    padding: 0 2.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .user-banner {
+    height: 300px;
+  }
+
+  .user-avatar-large {
+    width: 140px;
+    height: 140px;
+  }
+
+  .user-profile-info {
+    gap: 2rem;
+    padding: 0 3rem;
+  }
+
+  .user-stats-bar {
+    gap: 5rem;
+    margin: 0 3rem 3rem;
+  }
+
+  .user-custom-lists-section,
+  .user-status-tabs,
+  .user-watchlist-grid {
+    padding: 0 3rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .user-profile-page {
+    max-width: 1500px;
+  }
+
+  .user-banner {
+    height: 320px;
+  }
+
+  .user-avatar-large {
+    width: 150px;
+    height: 150px;
+  }
+}
+
+/* ===================================
+   DESKTOP FOOTER IMPROVEMENTS
+   =================================== */
+
+@media (min-width: 900px) {
+  .footer {
+    padding: 3.5rem 0 2rem;
+    margin-top: 5rem;
+  }
+
+  .footer-content {
+    grid-template-columns: 1.5fr 1fr 1fr;
+    gap: 4rem;
+    max-width: 1400px;
+  }
+
+  .footer-section h4 {
+    font-size: 1.15rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .footer-brand-text {
+    font-size: 1.6rem;
+  }
+
+  .footer-tagline {
+    font-size: 1rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .footer {
+    padding: 4rem 0 2rem;
+  }
+
+  .footer-content {
+    max-width: 1500px;
+    gap: 5rem;
+    padding: 0 3rem;
+  }
+}
+
+/* ===================================
+   DESKTOP CTA SECTION
+   =================================== */
+
+@media (min-width: 900px) {
+  .discover-cta {
+    padding: 5rem 2.5rem;
+    margin-top: 3rem;
+  }
+
+  .cta-content h2 {
+    font-size: 2.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .cta-content p {
+    font-size: 1.1rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .cta-buttons {
+    gap: 1.25rem;
+  }
+
+  .cta-btn {
+    padding: 1.1rem 2.25rem;
+    font-size: 1.15rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .discover-cta {
+    padding: 6rem 3rem;
+  }
+
+  .cta-content h2 {
+    font-size: 2.5rem;
+  }
+
+  .cta-btn {
+    padding: 1.2rem 2.5rem;
+    font-size: 1.2rem;
+  }
+}
+
+/* ===================================
+   DESKTOP LOGIN PAGE
+   =================================== */
+
+@media (min-width: 1024px) {
+  .login-container-new {
+    grid-template-columns: 1.1fr 0.9fr;
+  }
+
+  .brand-logo h1 {
+    font-size: 2.75rem;
+  }
+
+  .brand-tagline {
+    font-size: 1.15rem;
+  }
+
+  .login-card-new {
+    padding: 3rem;
+  }
+
+  .login-header h2 {
+    font-size: 1.9rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .login-branding {
+    padding: 4rem;
+  }
+
+  .brand-content {
+    max-width: 500px;
+  }
+
+  .brand-logo h1 {
+    font-size: 3rem;
+  }
+
+  .brand-tagline {
+    font-size: 1.2rem;
+    margin-bottom: 4rem;
+  }
+
+  .brand-features {
+    gap: 2rem;
+  }
+
+  .bf-icon {
+    width: 54px;
+    height: 54px;
+    font-size: 1.35rem;
+  }
+
+  .bf-text h4 {
+    font-size: 1.1rem;
+  }
+
+  .bf-text p {
+    font-size: 0.95rem;
+  }
+}
+
+/* ===================================
+   DESKTOP SETTINGS PAGE
+   =================================== */
+
+@media (min-width: 900px) {
+  .settings-page {
+    max-width: 1100px;
+    padding: 2.5rem;
+  }
+
+  .settings-container {
+    grid-template-columns: 240px 1fr;
+    gap: 2.5rem;
+  }
+
+  .settings-sidebar {
+    padding: 1.25rem;
+  }
+
+  .settings-tab {
+    padding: 1rem 1.15rem;
+    font-size: 0.98rem;
+  }
+
+  .settings-content {
+    padding: 2.5rem;
+  }
+
+  .settings-section h2 {
+    font-size: 1.35rem;
+    margin-bottom: 1.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .settings-page {
+    max-width: 1200px;
+  }
+
+  .settings-container {
+    grid-template-columns: 260px 1fr;
+  }
+}
+
+/* ===================================
+   DESKTOP SEARCH PAGE IMPROVEMENTS
+   =================================== */
+
+@media (min-width: 900px) {
+  .search-page {
+    max-width: 1400px;
+    padding: 2rem 2.5rem;
+  }
+
+  .search-header {
+    margin-bottom: 2.5rem;
+  }
+
+  .search-form {
+    max-width: 700px;
+    margin-bottom: 2rem;
+  }
+
+  .search-form input {
+    padding: 1.1rem 1.75rem;
+    font-size: 1.05rem;
+  }
+
+  .search-form button {
+    padding: 1.1rem 1.75rem;
+    font-size: 1.3rem;
+  }
+
+  .search-type-tabs {
+    gap: 0.6rem;
+  }
+
+  .search-type-tabs button {
+    padding: 0.7rem 1.35rem;
+    font-size: 0.95rem;
+  }
+
+  .search-results h2 {
+    font-size: 1.4rem;
+    margin-bottom: 1.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .search-page {
+    padding: 2.5rem 3rem;
+  }
+
+  .search-form {
+    max-width: 750px;
+  }
+
+  .search-form input {
+    padding: 1.15rem 2rem;
+    font-size: 1.1rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .search-page {
+    max-width: 1500px;
+  }
+
+  .search-form {
+    max-width: 800px;
+  }
+}
+
+/* ===================================
+   DESKTOP DISCOVER PAGE IMPROVEMENTS
+   =================================== */
+
+@media (min-width: 900px) {
+  .discover-page {
+    max-width: 1400px;
+    padding: 2rem 2.5rem;
+  }
+
+  .page-header h1 {
+    font-size: 2.25rem;
+    margin-bottom: 2.25rem;
+  }
+
+  .genre-selector {
+    margin-bottom: 2.5rem;
+  }
+
+  .genre-selector h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .discover-page {
+    padding: 2.5rem 3rem;
+  }
+
+  .page-header h1 {
+    font-size: 2.5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .discover-page {
+    max-width: 1500px;
+  }
+}
