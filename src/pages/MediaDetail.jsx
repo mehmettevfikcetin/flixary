@@ -190,6 +190,50 @@ const MediaDetail = () => {
     updateEntry({ userRating: rating });
   };
 
+  // Benzer yapımları listeye ekleme fonksiyonu
+  const addSimilarToList = async (item, itemType) => {
+    if (!auth.currentUser) {
+      showToast('Lütfen giriş yapın', 'error');
+      return;
+    }
+
+    const mediaType = itemType === 'series' ? 'tv' : itemType;
+    const title = getTitle(item, mediaType);
+    const releaseDate = mediaType === 'movie' ? item.release_date : item.first_air_date;
+
+    try {
+      await addDoc(collection(db, "watchlist"), {
+        uid: auth.currentUser.uid,
+        tmdbId: item.id,
+        mediaType: mediaType,
+        title: title,
+        poster: item.poster_path,
+        backdrop: item.backdrop_path,
+        rating: item.vote_average,
+        releaseDate: releaseDate,
+        genres: item.genre_ids || [],
+        runtime: null,
+        episodeCount: null,
+        seasonCount: null,
+        status: 'planned',
+        userRating: null,
+        progress: 0,
+        notes: '',
+        startDate: null,
+        endDate: null,
+        rewatchCount: 0,
+        favorite: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      showToast(`"${title}" listenize eklendi!`, 'success');
+    } catch (error) {
+      console.error("Ekleme hatası:", error);
+      showToast('Ekleme başarısız', 'error');
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -419,10 +463,11 @@ const MediaDetail = () => {
             <h3>Benzer Yapımlar</h3>
             <div className="similar-grid">
               {similar.map(item => (
-                <MediaCard 
-                  key={item.id} 
-                  item={item} 
+                <MediaCard
+                  key={item.id}
+                  item={item}
                   type={mediaType}
+                  onAddToList={addSimilarToList}
                 />
               ))}
             </div>
