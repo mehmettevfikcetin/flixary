@@ -6,7 +6,7 @@ import MediaCard from '../components/MediaCard';
 import AddToListModal from '../components/AddToListModal';
 import { showToast } from '../components/Toast';
 import { fetchWithEnglishTitles, getTitle, API_KEY, fetchTvEpisodeCount } from '../utils/tmdbUtils';
-import { FaFire, FaStar, FaPlay, FaCalendar, FaFilter, FaSortAmountDown, FaTimes, FaChevronDown, FaChevronUp, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaFilter, FaSortAmountDown, FaTimes, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 
 // Genre mappings for TMDB API
 const MOVIE_GENRES = [
@@ -117,13 +117,6 @@ const Discover = ({ type = 'movie' }) => {
   // Filter state
   const [filters, setFilters] = useState(getDefaultFilters());
   const [filtersExpanded, setFiltersExpanded] = useState(false);
-  const [filtersActive, setFiltersActive] = useState(false);
-  
-  // Sections for when no filters are active (home view) - each with own items and page
-  const [trendingData, setTrendingData] = useState({ items: [], page: 1, hasMore: true, loading: false });
-  const [popularData, setPopularData] = useState({ items: [], page: 1, hasMore: true, loading: false });
-  const [topRatedData, setTopRatedData] = useState({ items: [], page: 1, hasMore: true, loading: false });
-  const [upcomingData, setUpcomingData] = useState({ items: [], page: 1, hasMore: true, loading: false });
   
   // Modal state
   const [showAddModal, setShowAddModal] = useState(false);
@@ -148,7 +141,6 @@ const Discover = ({ type = 'movie' }) => {
       setCurrentPage(1);
       setTotalPages(0);
       setHasMore(true);
-      setFiltersActive(false);
       // Clear URL params
       setSearchParams({});
       prevTypeRef.current = type;
@@ -165,10 +157,7 @@ const Discover = ({ type = 'movie' }) => {
     const languageParam = searchParams.get('language');
     const statusParam = searchParams.get('status');
     
-    const hasFilters = genresParam || yearFromParam || yearToParam || minRatingParam || 
-                       (sortByParam && sortByParam !== 'popularity.desc') || languageParam || statusParam;
-    
-    if (hasFilters) {
+    if (genresParam || yearFromParam || yearToParam || minRatingParam || sortByParam || languageParam || statusParam) {
       setFilters({
         genres: genresParam ? genresParam.split(',').map(Number) : [],
         yearFrom: yearFromParam || '',
@@ -178,18 +167,13 @@ const Discover = ({ type = 'movie' }) => {
         language: languageParam || '',
         status: statusParam || '',
       });
-      setFiltersActive(true);
     }
   }, [searchParams]);
 
-  // Fetch data when mediaType changes or on initial load
+  // FIX 2: Fetch data on initial load - always use discover endpoint with infinite scroll grid
   useEffect(() => {
     fetchUserList();
-    if (filtersActive) {
-      fetchFilteredResults(1, true);
-    } else {
-      fetchAllData();
-    }
+    fetchResults(1, true);
   }, [mediaType]);
 
   // Sync filters to URL
@@ -211,13 +195,12 @@ const Discover = ({ type = 'movie' }) => {
     setSearchParams(params);
   }, [setSearchParams]);
 
-  // BUG 1 FIX: Infinite scroll with IntersectionObserver
-  // Store current page in a ref to avoid stale closure issues
+  // Infinite scroll with IntersectionObserver
   const currentPageRef = useRef(currentPage);
   currentPageRef.current = currentPage;
   
   useEffect(() => {
-    if (!filtersActive || !sentinelRef.current) return;
+    if (!sentinelRef.current) return;
     
     // Cleanup previous observer
     if (observerRef.current) {
@@ -228,8 +211,7 @@ const Discover = ({ type = 'movie' }) => {
       (entries) => {
         const entry = entries[0];
         if (entry.isIntersecting && hasMore && !loadingMore && !loading) {
-          // Use ref to get current page value to avoid stale closure
-          fetchFilteredResults(currentPageRef.current + 1, false);
+          fetchResults(currentPageRef.current + 1, false);
         }
       },
       { rootMargin: '200px' }
@@ -242,62 +224,10 @@ const Discover = ({ type = 'movie' }) => {
         observerRef.current.disconnect();
       }
     };
-  }, [filtersActive, hasMore, loadingMore, loading]);
+  }, [hasMore, loadingMore, loading]);
 
-  const fetchAllData = async () => {
-    setLoading(true);
-    try {
-      const [trendingRes, popularRes, topRatedRes, upcomingRes] = await Promise.all([
-        fetchWithEnglishTitles(`https://api.themoviedb.org/3/trending/${mediaType}/week`, { page: 1 }),
-        fetchWithEnglishTitles(`https://api.themoviedb.org/3/${mediaType}/popular`, { page: 1 }),
-        fetchWithEnglishTitles(`https://api.themoviedb.org/3/${mediaType}/top_rated`, { page: 1 }),
-        mediaType === 'movie' 
-          ? fetchWithEnglishTitles(`https://api.themoviedb.org/3/movie/upcoming`, { page: 1 })
-          : fetchWithEnglishTitles(`https://api.themoviedb.org/3/tv/on_the_air`, { page: 1 })
-      ]);
-
-      setTrendingData({ items: trendingRes.results, page: 1, hasMore: trendingRes.total_pages > 1, loading: false });
-      setPopularData({ items: popularRes.results, page: 1, hasMore: popularRes.total_pages > 1, loading: false });
-      setTopRatedData({ items: topRatedRes.results, page: 1, hasMore: topRatedRes.total_pages > 1, loading: false });
-      setUpcomingData({ items: upcomingRes.results, page: 1, hasMore: upcomingRes.total_pages > 1, loading: false });
-    } catch (error) {
-      console.error("Veri çekme hatası:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch more items for a specific category row
-  const fetchMoreForCategory = async (category) => {
-    const categoryMap = {
-      trending: { data: trendingData, setData: setTrendingData, endpoint: `https://api.themoviedb.org/3/trending/${mediaType}/week` },
-      popular: { data: popularData, setData: setPopularData, endpoint: `https://api.themoviedb.org/3/${mediaType}/popular` },
-      topRated: { data: topRatedData, setData: setTopRatedData, endpoint: `https://api.themoviedb.org/3/${mediaType}/top_rated` },
-      upcoming: { data: upcomingData, setData: setUpcomingData, endpoint: mediaType === 'movie' ? `https://api.themoviedb.org/3/movie/upcoming` : `https://api.themoviedb.org/3/tv/on_the_air` }
-    };
-
-    const { data, setData, endpoint } = categoryMap[category];
-    if (!data.hasMore || data.loading) return;
-
-    setData(prev => ({ ...prev, loading: true }));
-
-    try {
-      const nextPage = data.page + 1;
-      const response = await fetchWithEnglishTitles(endpoint, { page: nextPage });
-      setData(prev => ({
-        items: [...prev.items, ...response.results],
-        page: nextPage,
-        hasMore: nextPage < response.total_pages,
-        loading: false
-      }));
-    } catch (error) {
-      console.error(`${category} daha fazla yükleme hatası:`, error);
-      setData(prev => ({ ...prev, loading: false }));
-    }
-  };
-
-  // BUG 1 & 2 FIX: Fetch filtered results with pagination
-  const fetchFilteredResults = async (page = 1, reset = false) => {
+  // FIX 2: Single fetch function for infinite scroll grid (always uses /discover endpoint)
+  const fetchResults = async (page = 1, reset = false) => {
     if (page === 1) {
       setLoading(true);
     } else {
@@ -308,7 +238,7 @@ const Discover = ({ type = 'movie' }) => {
       const params = {
         sort_by: filters.sortBy,
         page: page,
-        'vote_count.gte': 50, // Minimum vote count for quality
+        'vote_count.gte': 50,
       };
       
       // Genre filter
@@ -360,11 +290,10 @@ const Discover = ({ type = 'movie' }) => {
       if (reset || page === 1) {
         setResults(data.results);
       } else {
-        // BUG 1 FIX: Append results instead of replacing
         setResults(prev => [...prev, ...data.results]);
       }
     } catch (error) {
-      console.error("Filtreleme hatası:", error);
+      console.error("Veri çekme hatası:", error);
       showToast("Sonuçlar yüklenirken bir hata oluştu", "error");
     } finally {
       setLoading(false);
@@ -388,38 +317,22 @@ const Discover = ({ type = 'movie' }) => {
     }
   };
 
-  // BUG 2 FIX: Apply filters
+  // FIX 2: Apply filters - always fetch from discover endpoint
   const applyFilters = () => {
-    const hasActiveFilters = filters.genres.length > 0 || 
-                             filters.yearFrom || 
-                             filters.yearTo || 
-                             filters.minRating || 
-                             filters.language ||
-                             filters.status ||
-                             filters.sortBy !== 'popularity.desc';
-    
-    setFiltersActive(hasActiveFilters);
     syncFiltersToUrl(filters);
-    
-    if (hasActiveFilters) {
-      setResults([]);
-      setCurrentPage(1);
-      fetchFilteredResults(1, true);
-    } else {
-      setResults([]);
-      fetchAllData();
-    }
+    setResults([]);
+    setCurrentPage(1);
+    fetchResults(1, true);
   };
 
-  // BUG 2 FIX: Clear all filters
+  // FIX 2: Clear all filters - reset to default popularity sort
   const clearFilters = () => {
     const defaultFilters = getDefaultFilters();
     setFilters(defaultFilters);
-    setFiltersActive(false);
     setResults([]);
     setCurrentPage(1);
     setSearchParams({});
-    fetchAllData();
+    fetchResults(1, true);
   };
 
   // Toggle genre selection
@@ -529,103 +442,6 @@ const Discover = ({ type = 'movie' }) => {
       console.error("Ekleme hatası:", error);
       showToast("Ekleme başarısız oldu", "error");
     }
-  };
-
-  // FIX 5: Infinite Horizontal Row with arrow navigation
-  const InfiniteHorizontalRow = ({ title, icon, data, category }) => {
-    const rowRef = useRef(null);
-    const [scrollPosition, setScrollPosition] = useState(0);
-    const [maxScroll, setMaxScroll] = useState(0);
-    const SCROLL_AMOUNT = 800; // pixels to scroll per click
-    const FETCH_THRESHOLD = 6; // fetch more when fewer than 6 items remain unseen
-
-    useEffect(() => {
-      const updateMaxScroll = () => {
-        if (rowRef.current) {
-          setMaxScroll(rowRef.current.scrollWidth - rowRef.current.clientWidth);
-        }
-      };
-      updateMaxScroll();
-      window.addEventListener('resize', updateMaxScroll);
-      return () => window.removeEventListener('resize', updateMaxScroll);
-    }, [data.items.length]);
-
-    const handleScroll = () => {
-      if (rowRef.current) {
-        setScrollPosition(rowRef.current.scrollLeft);
-      }
-    };
-
-    const scrollLeft = () => {
-      if (rowRef.current) {
-        rowRef.current.scrollBy({ left: -SCROLL_AMOUNT, behavior: 'smooth' });
-      }
-    };
-
-    const scrollRight = () => {
-      if (rowRef.current) {
-        rowRef.current.scrollBy({ left: SCROLL_AMOUNT, behavior: 'smooth' });
-        
-        // Check if we need to fetch more items
-        const cardWidth = 180; // approximate card width including margin
-        const visibleCards = Math.floor(rowRef.current.clientWidth / cardWidth);
-        const currentIndex = Math.floor((rowRef.current.scrollLeft + SCROLL_AMOUNT) / cardWidth);
-        const remainingCards = data.items.length - currentIndex - visibleCards;
-        
-        if (remainingCards < FETCH_THRESHOLD && data.hasMore && !data.loading) {
-          fetchMoreForCategory(category);
-        }
-      }
-    };
-
-    const canScrollLeft = scrollPosition > 0;
-    const canScrollRight = scrollPosition < maxScroll || data.hasMore;
-
-    return (
-      <section className="media-section">
-        <h2>{icon} {title}</h2>
-        <div className="horizontal-row-container">
-          {canScrollLeft && (
-            <button 
-              className="row-arrow row-arrow-left"
-              onClick={scrollLeft}
-              aria-label="Sola kaydır"
-            >
-              <FaChevronLeft />
-            </button>
-          )}
-          <div 
-            className="media-row" 
-            ref={rowRef}
-            onScroll={handleScroll}
-          >
-            {data.items.map((item, index) => (
-              <MediaCard
-                key={`${item.id}-${index}`}
-                item={item}
-                type={mediaType}
-                onAddToList={openAddModal}
-                isInList={isInList(item.id)}
-              />
-            ))}
-            {data.loading && (
-              <div className="row-loading-indicator">
-                <div className="loader-small"></div>
-              </div>
-            )}
-          </div>
-          {canScrollRight && (
-            <button 
-              className="row-arrow row-arrow-right"
-              onClick={scrollRight}
-              aria-label="Sağa kaydır"
-            >
-              <FaChevronRight />
-            </button>
-          )}
-        </div>
-      </section>
-    );
   };
 
   if (loading && !loadingMore) {
@@ -799,12 +615,12 @@ const Discover = ({ type = 'movie' }) => {
       </div>
 
       {/* Active Filter Tags */}
-      {filtersActive && (
+      {getActiveFilterCount() > 0 && (
         <div className="active-filters">
           {filters.genres.length > 0 && (
             <div className="active-filter-tag">
               🎭 {filters.genres.length} tür seçili
-              <button onClick={() => setFilters(prev => ({ ...prev, genres: [] }))}>
+              <button type="button" onClick={() => setFilters(prev => ({ ...prev, genres: [] }))}>
                 <FaTimes />
               </button>
             </div>
@@ -812,7 +628,7 @@ const Discover = ({ type = 'movie' }) => {
           {(filters.yearFrom || filters.yearTo) && (
             <div className="active-filter-tag">
               📅 {filters.yearFrom || '...'} - {filters.yearTo || '...'}
-              <button onClick={() => setFilters(prev => ({ ...prev, yearFrom: '', yearTo: '' }))}>
+              <button type="button" onClick={() => setFilters(prev => ({ ...prev, yearFrom: '', yearTo: '' }))}>
                 <FaTimes />
               </button>
             </div>
@@ -820,7 +636,7 @@ const Discover = ({ type = 'movie' }) => {
           {filters.minRating && (
             <div className="active-filter-tag">
               ⭐ {filters.minRating}+
-              <button onClick={() => setFilters(prev => ({ ...prev, minRating: '' }))}>
+              <button type="button" onClick={() => setFilters(prev => ({ ...prev, minRating: '' }))}>
                 <FaTimes />
               </button>
             </div>
@@ -828,7 +644,7 @@ const Discover = ({ type = 'movie' }) => {
           {filters.language && (
             <div className="active-filter-tag">
               🌍 {LANGUAGES.find(l => l.code === filters.language)?.name}
-              <button onClick={() => setFilters(prev => ({ ...prev, language: '' }))}>
+              <button type="button" onClick={() => setFilters(prev => ({ ...prev, language: '' }))}>
                 <FaTimes />
               </button>
             </div>
@@ -836,7 +652,7 @@ const Discover = ({ type = 'movie' }) => {
           {filters.sortBy !== 'popularity.desc' && (
             <div className="active-filter-tag">
               📊 {SORT_OPTIONS.find(s => s.value === filters.sortBy)?.label}
-              <button onClick={() => setFilters(prev => ({ ...prev, sortBy: 'popularity.desc' }))}>
+              <button type="button" onClick={() => setFilters(prev => ({ ...prev, sortBy: 'popularity.desc' }))}>
                 <FaTimes />
               </button>
             </div>
@@ -844,78 +660,45 @@ const Discover = ({ type = 'movie' }) => {
         </div>
       )}
 
-      {/* Filtered Results with Infinite Scroll */}
-      {filtersActive && (
-        <section className="media-section filtered-results">
-          <h2>📂 Sonuçlar ({totalPages > 0 ? `Sayfa ${currentPage}/${totalPages}` : 'Yükleniyor...'})</h2>
-          {results.length > 0 ? (
-            <>
-              <div className="media-grid">
-                {results.map((item, index) => (
-                  <MediaCard
-                    key={`${item.id}-${index}`}
-                    item={item}
-                    type={mediaType}
-                    onAddToList={openAddModal}
-                    isInList={isInList(item.id)}
-                  />
-                ))}
-              </div>
-              
-              {/* BUG 1 FIX: Infinite scroll sentinel - always render when filters active */}
-              <div ref={sentinelRef} className="scroll-sentinel" style={{ minHeight: '20px' }}>
-                {loadingMore && (
-                  <div className="loading-more">
-                    <div className="loader-small"></div>
-                    <span>Daha fazla yükleniyor...</span>
-                  </div>
-                )}
-              </div>
-              
-              {!hasMore && results.length > 0 && (
-                <div className="end-of-results">
-                  <p>Tüm sonuçlar gösterildi 🎬</p>
+      {/* FIX 2: Single Infinite Scroll Grid (no category rows) */}
+      <section className="media-section">
+        {results.length > 0 ? (
+          <>
+            <div className="media-grid">
+              {results.map((item, index) => (
+                <MediaCard
+                  key={`${item.id}-${index}`}
+                  item={item}
+                  type={mediaType}
+                  onAddToList={openAddModal}
+                  isInList={isInList(item.id)}
+                />
+              ))}
+            </div>
+            
+            {/* Infinite scroll sentinel */}
+            <div ref={sentinelRef} className="scroll-sentinel" style={{ minHeight: '20px' }}>
+              {loadingMore && (
+                <div className="loading-more">
+                  <div className="loader-small"></div>
+                  <span>Daha fazla yükleniyor...</span>
                 </div>
               )}
-            </>
-          ) : !loading ? (
-            <div className="no-results">
-              <p>🔍 Filtrelere uygun sonuç bulunamadı</p>
-              <button onClick={clearFilters}>Filtreleri Temizle</button>
             </div>
-          ) : null}
-        </section>
-      )}
-
-      {/* Default View (Sections) - when no filters active */}
-      {!filtersActive && (
-        <>
-          <InfiniteHorizontalRow 
-            title="Bu Hafta Trend" 
-            icon={<FaFire className="section-icon trend" />} 
-            data={trendingData}
-            category="trending"
-          />
-          <InfiniteHorizontalRow 
-            title="Popüler" 
-            icon={<FaPlay className="section-icon popular" />} 
-            data={popularData}
-            category="popular"
-          />
-          <InfiniteHorizontalRow 
-            title="En Çok Beğenilen" 
-            icon={<FaStar className="section-icon top" />} 
-            data={topRatedData}
-            category="topRated"
-          />
-          <InfiniteHorizontalRow 
-            title={mediaType === 'movie' ? 'Yakında' : 'Yayında'} 
-            icon={<FaCalendar className="section-icon upcoming" />} 
-            data={upcomingData}
-            category="upcoming"
-          />
-        </>
-      )}
+            
+            {!hasMore && results.length > 0 && (
+              <div className="end-of-results">
+                <p>Tüm sonuçlar gösterildi 🎬</p>
+              </div>
+            )}
+          </>
+        ) : !loading ? (
+          <div className="no-results">
+            <p>🔍 Sonuç bulunamadı</p>
+            <button type="button" onClick={clearFilters}>Filtreleri Temizle</button>
+          </div>
+        ) : null}
+      </section>
 
       {/* Add to List Modal */}
       <AddToListModal
