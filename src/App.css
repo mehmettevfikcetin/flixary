@@ -8547,6 +8547,340 @@ html, body {
 }
 
 /* ===================================
+   DISCOVER PAGE - COMPREHENSIVE FILTER PANEL
+   =================================== */
+
+.discover-filter-panel {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.filter-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  background: var(--bg-secondary);
+  transition: var(--transition);
+}
+
+.filter-panel-header:hover {
+  background: var(--bg-tertiary);
+}
+
+.filter-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.filter-header-left .filter-icon {
+  color: var(--accent-primary);
+}
+
+.filter-count-badge {
+  background: var(--accent-primary);
+  color: white;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.filter-toggle-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.filter-panel-content {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.filter-section.filter-row {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.filter-label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Genre Chips */
+.genre-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.genre-chip {
+  padding: 0.5rem 1rem;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  transition: var(--transition);
+  border: 1px solid transparent;
+}
+
+.genre-chip:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--accent-primary);
+}
+
+.genre-chip.selected {
+  background: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-primary);
+}
+
+/* Filter Items */
+.filter-item {
+  flex: 1;
+  min-width: 150px;
+  max-width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.year-range {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.year-separator {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.filter-panel-content .filter-select {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  cursor: pointer;
+  outline: none;
+  transition: var(--transition);
+}
+
+.filter-panel-content .filter-select:hover,
+.filter-panel-content .filter-select:focus {
+  border-color: var(--accent-primary);
+}
+
+/* Filter Actions */
+.discover-filter-panel .filter-actions {
+  display: flex;
+  gap: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-color);
+  margin-top: 0.5rem;
+}
+
+.discover-filter-panel .filter-apply-btn {
+  padding: 0.75rem 1.5rem;
+  background: var(--accent-primary);
+  color: white;
+  border-radius: var(--radius);
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.discover-filter-panel .filter-apply-btn:hover {
+  background: var(--accent-secondary);
+  transform: translateY(-2px);
+}
+
+.discover-filter-panel .filter-clear-btn {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  color: var(--accent-red);
+  border: 1px solid var(--accent-red);
+  border-radius: var(--radius);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: var(--transition);
+}
+
+.discover-filter-panel .filter-clear-btn:hover {
+  background: var(--accent-red);
+  color: white;
+}
+
+/* Active Filter Tags */
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.active-filter-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  background: var(--accent-primary);
+  color: white;
+  border-radius: 20px;
+  font-size: 0.85rem;
+}
+
+.active-filter-tag button {
+  background: transparent;
+  color: white;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  opacity: 0.8;
+  transition: var(--transition);
+}
+
+.active-filter-tag button:hover {
+  opacity: 1;
+}
+
+/* Filtered Results */
+.filtered-results h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Infinite Scroll */
+.scroll-sentinel {
+  width: 100%;
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-more {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--text-secondary);
+}
+
+.loader-small {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--bg-tertiary);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.end-of-results {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+}
+
+.end-of-results p {
+  font-size: 1rem;
+}
+
+.no-results {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-secondary);
+}
+
+.no-results p {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.no-results button {
+  padding: 0.75rem 1.5rem;
+  background: var(--accent-primary);
+  color: white;
+  border-radius: var(--radius);
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.no-results button:hover {
+  background: var(--accent-secondary);
+}
+
+/* Responsive Filter Panel */
+@media (max-width: 768px) {
+  .filter-panel-content {
+    padding: 1rem;
+  }
+
+  .filter-section.filter-row {
+    flex-direction: column;
+  }
+
+  .filter-item {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .year-range {
+    flex-wrap: wrap;
+  }
+
+  .year-range .filter-select {
+    flex: 1;
+    min-width: 100px;
+  }
+
+  .discover-filter-panel .filter-actions {
+    flex-direction: column;
+  }
+
+  .discover-filter-panel .filter-apply-btn,
+  .discover-filter-panel .filter-clear-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .genre-chips {
+    max-height: 200px;
+    overflow-y: auto;
+  }
+}
+
+/* ===================================
    CTA SECTION RESPONSIVE
    =================================== */
 
