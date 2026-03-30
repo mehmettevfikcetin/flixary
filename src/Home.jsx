@@ -11,17 +11,20 @@ import { FaFire, FaStar, FaFilm, FaTv, FaArrowRight, FaClock, FaChartLine, FaPla
 const IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
 const BACKDROP_PATH = "https://image.tmdb.org/t/p/original";
 
+// FIX 2: TMDB enforces a hard limit of 500 pages
+const TMDB_MAX_PAGES = 500;
+
 const Home = () => {
   const navigate = useNavigate();
-  // FIX 3 & 4: Each row has its own state with items, page, hasMore, loading
-  const [trendingMoviesData, setTrendingMoviesData] = useState({ items: [], page: 1, hasMore: true, loading: false });
-  const [trendingSeriesData, setTrendingSeriesData] = useState({ items: [], page: 1, hasMore: true, loading: false });
-  const [popularMoviesData, setPopularMoviesData] = useState({ items: [], page: 1, hasMore: true, loading: false });
-  const [popularSeriesData, setPopularSeriesData] = useState({ items: [], page: 1, hasMore: true, loading: false });
-  const [topRatedMoviesData, setTopRatedMoviesData] = useState({ items: [], page: 1, hasMore: true, loading: false });
-  const [topRatedSeriesData, setTopRatedSeriesData] = useState({ items: [], page: 1, hasMore: true, loading: false });
-  const [upcomingMoviesData, setUpcomingMoviesData] = useState({ items: [], page: 1, hasMore: true, loading: false });
-  const [onAirSeriesData, setOnAirSeriesData] = useState({ items: [], page: 1, hasMore: true, loading: false });
+  // FIX 2: Each row state now includes totalPages for proper pagination boundary handling
+  const [trendingMoviesData, setTrendingMoviesData] = useState({ items: [], page: 1, totalPages: 1, hasMore: true, loading: false });
+  const [trendingSeriesData, setTrendingSeriesData] = useState({ items: [], page: 1, totalPages: 1, hasMore: true, loading: false });
+  const [popularMoviesData, setPopularMoviesData] = useState({ items: [], page: 1, totalPages: 1, hasMore: true, loading: false });
+  const [popularSeriesData, setPopularSeriesData] = useState({ items: [], page: 1, totalPages: 1, hasMore: true, loading: false });
+  const [topRatedMoviesData, setTopRatedMoviesData] = useState({ items: [], page: 1, totalPages: 1, hasMore: true, loading: false });
+  const [topRatedSeriesData, setTopRatedSeriesData] = useState({ items: [], page: 1, totalPages: 1, hasMore: true, loading: false });
+  const [upcomingMoviesData, setUpcomingMoviesData] = useState({ items: [], page: 1, totalPages: 1, hasMore: true, loading: false });
+  const [onAirSeriesData, setOnAirSeriesData] = useState({ items: [], page: 1, totalPages: 1, hasMore: true, loading: false });
   
   const [featuredItem, setFeaturedItem] = useState(null);
   const [watchingList, setWatchingList] = useState([]);
@@ -40,7 +43,7 @@ const Home = () => {
     return cleanup;
   }, []);
 
-  // FIX 3: Fetch all rows including new ones
+  // FIX 2: Fetch all rows including new ones - now stores totalPages for pagination limits
   const fetchAllRows = async () => {
     try {
       const [
@@ -59,14 +62,17 @@ const Home = () => {
         fetchWithEnglishTitles('https://api.themoviedb.org/3/tv/on_the_air', { page: 1 })
       ]);
 
-      setTrendingMoviesData({ items: trendingMovies.results, page: 1, hasMore: trendingMovies.total_pages > 1, loading: false });
-      setTrendingSeriesData({ items: trendingSeries.results, page: 1, hasMore: trendingSeries.total_pages > 1, loading: false });
-      setPopularMoviesData({ items: popularMovies.results, page: 1, hasMore: popularMovies.total_pages > 1, loading: false });
-      setPopularSeriesData({ items: popularSeries.results, page: 1, hasMore: popularSeries.total_pages > 1, loading: false });
-      setTopRatedMoviesData({ items: topRatedMovies.results, page: 1, hasMore: topRatedMovies.total_pages > 1, loading: false });
-      setTopRatedSeriesData({ items: topRatedSeries.results, page: 1, hasMore: topRatedSeries.total_pages > 1, loading: false });
-      setUpcomingMoviesData({ items: upcomingMovies.results, page: 1, hasMore: upcomingMovies.total_pages > 1, loading: false });
-      setOnAirSeriesData({ items: onAirSeries.results, page: 1, hasMore: onAirSeries.total_pages > 1, loading: false });
+      // FIX 2: Store totalPages capped at TMDB_MAX_PAGES for each row
+      const capTotalPages = (tp) => Math.min(tp || 1, TMDB_MAX_PAGES);
+      
+      setTrendingMoviesData({ items: trendingMovies.results, page: 1, totalPages: capTotalPages(trendingMovies.total_pages), hasMore: trendingMovies.total_pages > 1, loading: false });
+      setTrendingSeriesData({ items: trendingSeries.results, page: 1, totalPages: capTotalPages(trendingSeries.total_pages), hasMore: trendingSeries.total_pages > 1, loading: false });
+      setPopularMoviesData({ items: popularMovies.results, page: 1, totalPages: capTotalPages(popularMovies.total_pages), hasMore: popularMovies.total_pages > 1, loading: false });
+      setPopularSeriesData({ items: popularSeries.results, page: 1, totalPages: capTotalPages(popularSeries.total_pages), hasMore: popularSeries.total_pages > 1, loading: false });
+      setTopRatedMoviesData({ items: topRatedMovies.results, page: 1, totalPages: capTotalPages(topRatedMovies.total_pages), hasMore: topRatedMovies.total_pages > 1, loading: false });
+      setTopRatedSeriesData({ items: topRatedSeries.results, page: 1, totalPages: capTotalPages(topRatedSeries.total_pages), hasMore: topRatedSeries.total_pages > 1, loading: false });
+      setUpcomingMoviesData({ items: upcomingMovies.results, page: 1, totalPages: capTotalPages(upcomingMovies.total_pages), hasMore: upcomingMovies.total_pages > 1, loading: false });
+      setOnAirSeriesData({ items: onAirSeries.results, page: 1, totalPages: capTotalPages(onAirSeries.total_pages), hasMore: onAirSeries.total_pages > 1, loading: false });
       
       // Select random featured item from trending
       const allTrending = [...trendingMovies.results.slice(0, 5), ...trendingSeries.results.slice(0, 5)];
@@ -76,29 +82,47 @@ const Home = () => {
       setFeaturedItem(featured);
       
     } catch (error) {
-      console.error("Veri çekme hatası:", error);
+      console.error("[Flixary] Initial data fetch failed:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  // FIX 4: Function to fetch more items for any row
+  // FIX 2 & 4: Function to fetch more items with pagination guards and safe error handling
   const fetchMoreForRow = async (endpoint, data, setData) => {
-    if (!data.hasMore || data.loading) return;
+    // FIX 2: Guard against fetching beyond TMDB limits
+    // Check if already loading, no more pages, or at TMDB's hard 500-page limit
+    if (data.loading) return;
+    if (!data.hasMore) return;
+    if (data.page >= data.totalPages) return;
+    if (data.page >= TMDB_MAX_PAGES) return;
     
     setData(prev => ({ ...prev, loading: true }));
     
     try {
       const nextPage = data.page + 1;
       const response = await fetchWithEnglishTitles(endpoint, { page: nextPage });
+      
+      // FIX 2: Calculate if there are more pages, respecting TMDB's 500 limit
+      const cappedTotalPages = Math.min(response.total_pages || 1, TMDB_MAX_PAGES);
+      const canFetchMore = nextPage < cappedTotalPages;
+      
       setData(prev => ({
         items: [...prev.items, ...response.results],
         page: nextPage,
-        hasMore: nextPage < response.total_pages,
+        totalPages: cappedTotalPages,
+        hasMore: canFetchMore,
         loading: false
       }));
     } catch (error) {
-      console.error("Daha fazla yükleme hatası:", error);
+      // FIX 4: Silent error handling - NEVER reset items or page state
+      // Only log the error and release the loading lock
+      if (error.name === 'AbortError' || error.name === 'CanceledError') {
+        // Silently ignore abort errors - they're expected during rapid navigation
+        return;
+      }
+      console.error("[Flixary] Carousel fetch failed:", error);
+      // Only release loading lock, preserve all existing data
       setData(prev => ({ ...prev, loading: false }));
     }
   };
@@ -222,44 +246,64 @@ const Home = () => {
     }
   };
 
-  // FIX 1 & 4: Reusable Infinite Horizontal Row with proper arrow navigation
+  // FIX 1, 2, 3: Reusable Infinite Horizontal Row with proper button behavior, pagination limits, and stable keys
   const InfiniteHorizontalRow = ({ rowKey, title, icon, data, setData, endpoint, mediaType, seeAllLink }) => {
+    // FIX 3: Use ref for scroll position to survive re-renders without resetting
     const rowRef = useRef(null);
-    const [scrollPosition, setScrollPosition] = useState(0);
-    const [maxScroll, setMaxScroll] = useState(0);
+    const scrollPositionRef = useRef(0);
+    const [scrollState, setScrollState] = useState({ canScrollLeft: false, canScrollRight: true });
     const SCROLL_AMOUNT = 800;
     const FETCH_THRESHOLD = 6;
 
+    // Update scroll capabilities when items change
     useEffect(() => {
-      const updateMaxScroll = () => {
+      const updateScrollState = () => {
         if (rowRef.current) {
-          setMaxScroll(rowRef.current.scrollWidth - rowRef.current.clientWidth);
+          const maxScroll = rowRef.current.scrollWidth - rowRef.current.clientWidth;
+          const currentScroll = rowRef.current.scrollLeft;
+          // FIX 2: canScrollRight also checks if we've hit TMDB limits
+          const hasMoreToFetch = data.hasMore && data.page < data.totalPages && data.page < TMDB_MAX_PAGES;
+          setScrollState({
+            canScrollLeft: currentScroll > 0,
+            canScrollRight: currentScroll < maxScroll || hasMoreToFetch
+          });
         }
       };
-      updateMaxScroll();
-      window.addEventListener('resize', updateMaxScroll);
-      return () => window.removeEventListener('resize', updateMaxScroll);
-    }, [data.items.length]);
+      updateScrollState();
+      window.addEventListener('resize', updateScrollState);
+      return () => window.removeEventListener('resize', updateScrollState);
+    }, [data.items.length, data.hasMore, data.page, data.totalPages]);
 
+    // FIX 3: Track scroll position in ref to preserve across re-renders
     const handleScroll = () => {
       if (rowRef.current) {
-        setScrollPosition(rowRef.current.scrollLeft);
+        scrollPositionRef.current = rowRef.current.scrollLeft;
+        const maxScroll = rowRef.current.scrollWidth - rowRef.current.clientWidth;
+        const hasMoreToFetch = data.hasMore && data.page < data.totalPages && data.page < TMDB_MAX_PAGES;
+        setScrollState({
+          canScrollLeft: scrollPositionRef.current > 0,
+          canScrollRight: scrollPositionRef.current < maxScroll || hasMoreToFetch
+        });
       }
     };
 
-    // FIX 1: Proper button with type="button" and event prevention
+    // FIX 1: Proper button handler with complete event prevention
     const scrollLeft = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
       if (rowRef.current) {
         rowRef.current.scrollBy({ left: -SCROLL_AMOUNT, behavior: 'smooth' });
       }
     };
 
-    // FIX 1: Proper button with type="button" and event prevention
+    // FIX 1 & 2: Proper button handler with event prevention and pagination guard
     const scrollRight = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
       if (rowRef.current) {
         rowRef.current.scrollBy({ left: SCROLL_AMOUNT, behavior: 'smooth' });
         
@@ -269,14 +313,21 @@ const Home = () => {
         const currentIndex = Math.floor((rowRef.current.scrollLeft + SCROLL_AMOUNT) / cardWidth);
         const remainingCards = data.items.length - currentIndex - visibleCards;
         
-        if (remainingCards < FETCH_THRESHOLD && data.hasMore && !data.loading) {
+        // FIX 2: Only fetch if within TMDB pagination limits
+        const canFetchMore = data.hasMore && 
+                            !data.loading && 
+                            data.page < data.totalPages && 
+                            data.page < TMDB_MAX_PAGES;
+        
+        if (remainingCards < FETCH_THRESHOLD && canFetchMore) {
           fetchMoreForRow(endpoint, data, setData);
         }
       }
     };
 
-    const canScrollLeft = scrollPosition > 0;
-    const canScrollRight = scrollPosition < maxScroll || data.hasMore;
+    // FIX 2: Determine if Next button should be disabled (at pagination boundary)
+    const isAtPaginationLimit = data.page >= data.totalPages || data.page >= TMDB_MAX_PAGES;
+    const nextButtonDisabled = isAtPaginationLimit && scrollPositionRef.current >= (rowRef.current?.scrollWidth - rowRef.current?.clientWidth || 0);
 
     return (
       <section className="content-section">
@@ -289,7 +340,7 @@ const Home = () => {
           )}
         </div>
         <div className="horizontal-row-container">
-          {canScrollLeft && (
+          {scrollState.canScrollLeft && (
             <button 
               type="button"
               className="row-arrow row-arrow-left"
@@ -304,9 +355,10 @@ const Home = () => {
             ref={rowRef}
             onScroll={handleScroll}
           >
-            {data.items.map((item) => (
+            {/* FIX 3: Stable key pattern using rowKey-itemId-index to prevent remounting */}
+            {data.items.map((item, index) => (
               <MediaCard
-                key={`${rowKey}-${item.id}`}
+                key={`${rowKey}-${item.id}-${index}`}
                 item={item}
                 type={mediaType}
                 onAddToList={openAddModal}
@@ -319,7 +371,8 @@ const Home = () => {
               </div>
             )}
           </div>
-          {canScrollRight && (
+          {/* FIX 2: Hide/disable Next button when at pagination boundary */}
+          {scrollState.canScrollRight && !nextButtonDisabled && (
             <button 
               type="button"
               className="row-arrow row-arrow-right"
