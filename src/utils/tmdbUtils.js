@@ -10,11 +10,15 @@ if (!API_KEY) {
  * TMDB API'den hem tr-TR hem en-US sonuçları çeker,
  * İngilizce başlıkları (en_title / en_name) her item'a ekler.
  * Böylece Japonca/Korece animeler için İngilizce başlık kullanılabilir.
+ * @param {string} url - API endpoint URL
+ * @param {object} params - Query parameters
+ * @param {AbortSignal} signal - Optional AbortController signal for cancellation
  */
-export const fetchWithEnglishTitles = async (url, params = {}) => {
+export const fetchWithEnglishTitles = async (url, params = {}, signal = null) => {
+  const axiosConfig = signal ? { signal } : {};
   const [trRes, enRes] = await Promise.all([
-    axios.get(url, { params: { ...params, api_key: API_KEY, language: 'tr-TR' } }),
-    axios.get(url, { params: { ...params, api_key: API_KEY, language: 'en-US' } })
+    axios.get(url, { params: { ...params, api_key: API_KEY, language: 'tr-TR' }, ...axiosConfig }),
+    axios.get(url, { params: { ...params, api_key: API_KEY, language: 'en-US' }, ...axiosConfig })
   ]);
 
   // en-US sonuçlarından id → başlık haritası oluştur

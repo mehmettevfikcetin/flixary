@@ -8842,6 +8842,78 @@ html, body {
   opacity: 1;
 }
 
+/* Anime Toggle Styles */
+.anime-toggle-item {
+  min-width: 140px;
+}
+
+.anime-toggle-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.anime-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 120px;
+}
+
+.anime-toggle-btn:hover {
+  border-color: var(--accent-primary);
+}
+
+.anime-toggle-btn.active {
+  background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+  border-color: #c44569;
+}
+
+.toggle-track {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.anime-toggle-btn.active .toggle-track {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: var(--text-secondary);
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.anime-toggle-btn.active .toggle-thumb {
+  left: 18px;
+  background: white;
+}
+
+.toggle-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+.anime-toggle-btn.active .toggle-label {
+  color: white;
+}
+
 /* Filtered Results */
 .filtered-results h2 {
   display: flex;

@@ -87,6 +87,9 @@ const generateYears = () => {
 
 const YEARS = generateYears();
 
+// TMDB "anime" keyword ID - used to exclude anime content when filter is OFF
+const ANIME_KEYWORD_ID = 210024;
+
 // Default filters
 const getDefaultFilters = () => ({
   genres: [],
@@ -96,6 +99,7 @@ const getDefaultFilters = () => ({
   sortBy: 'popularity.desc',
   language: '',
   status: '', // TV specific: returning series, ended, etc.
+  includeAnime: false, // Anime toggle - OFF by default
 });
 
 const Discover = ({ type = 'movie' }) => {
@@ -125,6 +129,9 @@ const Discover = ({ type = 'movie' }) => {
   // Ref for infinite scroll sentinel
   const sentinelRef = useRef(null);
   const observerRef = useRef(null);
+  
+  // Race condition fix: AbortController ref to cancel in-flight requests
+  const abortControllerRef = useRef(null);
   
   // Previous type tracking to detect navigation
   const prevTypeRef = useRef(type);
@@ -156,8 +163,9 @@ const Discover = ({ type = 'movie' }) => {
     const sortByParam = searchParams.get('sortBy');
     const languageParam = searchParams.get('language');
     const statusParam = searchParams.get('status');
+    const includeAnimeParam = searchParams.get('includeAnime');
     
-    if (genresParam || yearFromParam || yearToParam || minRatingParam || sortByParam || languageParam || statusParam) {
+    if (genresParam || yearFromParam || yearToParam || minRatingParam || sortByParam || languageParam || statusParam || includeAnimeParam) {
       setFilters({
         genres: genresParam ? genresParam.split(',').map(Number) : [],
         yearFrom: yearFromParam || '',
@@ -166,6 +174,7 @@ const Discover = ({ type = 'movie' }) => {
         sortBy: sortByParam || 'popularity.desc',
         language: languageParam || '',
         status: statusParam || '',
+        includeAnime: includeAnimeParam === 'true',
       });
     }
   }, [searchParams]);
@@ -174,6 +183,13 @@ const Discover = ({ type = 'movie' }) => {
   useEffect(() => {
     fetchUserList();
     fetchResults(1, true);
+    
+    // Cleanup: abort any pending request when component unmounts or mediaType changes
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [mediaType]);
 
   // Sync filters to URL
@@ -191,6 +207,7 @@ const Discover = ({ type = 'movie' }) => {
     }
     if (newFilters.language) params.set('language', newFilters.language);
     if (newFilters.status) params.set('status', newFilters.status);
+    if (newFilters.includeAnime) params.set('includeAnime', 'true');
     
     setSearchParams(params);
   }, [setSearchParams]);
@@ -227,7 +244,17 @@ const Discover = ({ type = 'movie' }) => {
   }, [hasMore, loadingMore, loading]);
 
   // FIX 2: Single fetch function for infinite scroll grid (always uses /discover endpoint)
+  // RACE CONDITION FIX: Added AbortController to cancel stale requests
   const fetchResults = async (page = 1, reset = false) => {
+    // Cancel any in-flight request before starting a new one
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new AbortController for this request
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+    
     if (page === 1) {
       setLoading(true);
     } else {
@@ -278,26 +305,43 @@ const Discover = ({ type = 'movie' }) => {
         params.with_status = filters.status;
       }
       
+      // Anime exclusion filter - when includeAnime is OFF, exclude anime using keyword ID
+      // Using without_keywords instead of without_genres to preserve Western animation (Pixar, Disney, etc.)
+      if (!filters.includeAnime) {
+        params.without_keywords = ANIME_KEYWORD_ID;
+      }
+      
       const data = await fetchWithEnglishTitles(
         `https://api.themoviedb.org/3/discover/${mediaType}`,
-        params
+        params,
+        abortController.signal
       );
       
-      setCurrentPage(page);
-      setTotalPages(data.total_pages);
-      setHasMore(page < data.total_pages);
-      
-      if (reset || page === 1) {
-        setResults(data.results);
-      } else {
-        setResults(prev => [...prev, ...data.results]);
+      // Only update state if this request wasn't aborted
+      if (!abortController.signal.aborted) {
+        setCurrentPage(page);
+        setTotalPages(data.total_pages);
+        setHasMore(page < data.total_pages);
+        
+        if (reset || page === 1) {
+          setResults(data.results);
+        } else {
+          setResults(prev => [...prev, ...data.results]);
+        }
       }
     } catch (error) {
+      // Ignore abort errors - they're expected when a new request cancels an old one
+      if (error.name === 'AbortError' || error.name === 'CanceledError') {
+        return;
+      }
       console.error("Veri çekme hatası:", error);
       showToast("Sonuçlar yüklenirken bir hata oluştu", "error");
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
+      // Only clear loading state if this request wasn't aborted
+      if (!abortController.signal.aborted) {
+        setLoading(false);
+        setLoadingMore(false);
+      }
     }
   };
 
@@ -354,6 +398,7 @@ const Discover = ({ type = 'movie' }) => {
     if (filters.language) count++;
     if (filters.status) count++;
     if (filters.sortBy !== 'popularity.desc') count++;
+    if (filters.includeAnime) count++; // Count if anime is explicitly included
     return count;
   };
 
@@ -591,6 +636,26 @@ const Discover = ({ type = 'movie' }) => {
                   </select>
                 </div>
               )}
+
+              {/* Anime Toggle */}
+              <div className="filter-item anime-toggle-item">
+                <label className="filter-label">🎌 Anime</label>
+                <div className="anime-toggle-wrapper">
+                  <button
+                    type="button"
+                    className={`anime-toggle-btn ${filters.includeAnime ? 'active' : ''}`}
+                    onClick={() => setFilters(prev => ({ ...prev, includeAnime: !prev.includeAnime }))}
+                    aria-pressed={filters.includeAnime}
+                  >
+                    <span className="toggle-track">
+                      <span className="toggle-thumb"></span>
+                    </span>
+                    <span className="toggle-label">
+                      {filters.includeAnime ? 'Dahil' : 'Hariç'}
+                    </span>
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Filter Actions */}
@@ -653,6 +718,14 @@ const Discover = ({ type = 'movie' }) => {
             <div className="active-filter-tag">
               📊 {SORT_OPTIONS.find(s => s.value === filters.sortBy)?.label}
               <button type="button" onClick={() => setFilters(prev => ({ ...prev, sortBy: 'popularity.desc' }))}>
+                <FaTimes />
+              </button>
+            </div>
+          )}
+          {filters.includeAnime && (
+            <div className="active-filter-tag">
+              🎌 Anime Dahil
+              <button type="button" onClick={() => setFilters(prev => ({ ...prev, includeAnime: false }))}>
                 <FaTimes />
               </button>
             </div>
