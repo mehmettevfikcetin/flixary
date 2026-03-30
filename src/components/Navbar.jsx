@@ -106,7 +106,7 @@ const Navbar = ({ user }) => {
             <Link to="/users" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
               <FaUserFriends /> Kullanıcı Ara
             </Link>
-            {user && (
+            {user ? (
               <>
                 <div className="mobile-nav-divider"></div>
                 <Link to="/profile" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
@@ -118,6 +118,13 @@ const Navbar = ({ user }) => {
                 <button className="mobile-nav-link logout" onClick={handleLogout}>
                   <FaSignOutAlt /> Çıkış Yap
                 </button>
+              </>
+            ) : (
+              <>
+                <div className="mobile-nav-divider"></div>
+                <Link to="/login" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
+                  <FaUser /> Giriş Yap
+                </Link>
               </>
             )}
           </div>
@@ -199,7 +206,7 @@ const Navbar = ({ user }) => {
           </div>
 
           {/* User Avatar - Desktop with Click Dropdown */}
-          {user && (
+          {user ? (
             <div className="navbar-user desktop-user" ref={dropdownRef}>
               <button 
                 className="user-avatar-btn"
@@ -233,6 +240,10 @@ const Navbar = ({ user }) => {
                 </div>
               )}
             </div>
+          ) : (
+            <Link to="/login" className="navbar-login-btn desktop-user">
+              Giriş Yap
+            </Link>
           )}
         </div>
 

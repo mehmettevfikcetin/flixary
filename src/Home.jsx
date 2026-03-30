@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { db, auth } from './firebase';
 import { collection, query, where, onSnapshot, addDoc, doc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
 import MediaCard from './components/MediaCard';
@@ -12,6 +12,7 @@ const IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
 const BACKDROP_PATH = "https://image.tmdb.org/t/p/original";
 
 const Home = () => {
+  const navigate = useNavigate();
   const [trendingMovies, setTrendingMovies] = useState([]);
   const [trendingSeries, setTrendingSeries] = useState([]);
   const [featuredItem, setFeaturedItem] = useState(null);
@@ -91,7 +92,7 @@ const Home = () => {
   // Modal açma fonksiyonu
   const openAddModal = (item, type) => {
     if (!auth.currentUser) {
-      showToast("Lütfen önce giriş yapın!", "warning");
+      navigate('/login');
       return;
     }
     

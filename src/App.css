@@ -4490,6 +4490,21 @@ button {
   display: flex;
 }
 
+.navbar-login-btn {
+  padding: 0.6rem 1.2rem;
+  background: var(--accent-primary);
+  color: white;
+  border-radius: var(--radius);
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: var(--transition);
+}
+
+.navbar-login-btn:hover {
+  background: var(--accent-secondary);
+  transform: translateY(-1px);
+}
+
 .mobile-controls {
   display: none;
   align-items: center;

@@ -115,7 +115,11 @@ const MediaDetail = () => {
   };
 
   const addToList = async (status = 'planned') => {
-    if (!auth.currentUser || !media) return;
+    if (!auth.currentUser) {
+      navigate('/login');
+      return;
+    }
+    if (!media) return;
     
     const mediaType = type === 'series' ? 'tv' : type;
     // Başlık seçimi: İngilizce > Orijinal > Türkçe
@@ -196,7 +200,7 @@ const MediaDetail = () => {
   // Benzer yapımlar için modal aç
   const openAddModal = (item, itemType) => {
     if (!auth.currentUser) {
-      showToast('Lütfen giriş yapın', 'error');
+      navigate('/login');
       return;
     }
     setSelectedSimilar({ item, type: itemType });

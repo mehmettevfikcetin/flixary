@@ -672,7 +672,7 @@ const UserSearch = () => {
         <div className="search-tips">
           <h3>💡 İpuçları</h3>
           <ul>
-            <li>Kullanıcı adını @ ile arayın (örn: @filmcitevfik)</li>
+            <li>Kullanıcı adını @ ile arayın (örn: @kullaniciadi)</li>
             <li>İsim veya kullanıcı adı ile arama yapabilirsiniz</li>
             <li>Profilleri görüntüleyerek listelerini keşfedin</li>
           </ul>

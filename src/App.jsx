@@ -25,6 +25,26 @@ function ScrollToTop() {
   return null;
 }
 
+// Protected route wrapper - redirects to login if not authenticated
+function ProtectedRoute({ children, user, loading }) {
+  const location = useLocation();
+  
+  if (loading) {
+    return (
+      <div className="app-loading">
+        <div className="loader"></div>
+        <p>Yükleniyor...</p>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  
+  return children;
+}
+
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -37,22 +57,13 @@ function App() {
     return () => unsubscribe();
   }, []);
 
+  // Show loading spinner while Firebase auth state is being determined
   if (loading) {
     return (
       <div className="app-loading">
         <div className="loader"></div>
         <p>Yükleniyor...</p>
       </div>
-    );
-  }
-
-  // Giriş yapılmamışsa Login sayfasına yönlendir
-  if (!user) {
-    return (
-      <>
-        <Login />
-        <ToastContainer />
-      </>
     );
   }
 
@@ -63,11 +74,9 @@ function App() {
         <Navbar user={user} />
         <main className="main-content">
           <Routes>
+            {/* Public Routes - accessible without login */}
             <Route path="/" element={<Home />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/lists" element={<Profile />} />
-            <Route path="/list/:listId" element={<CustomListDetail />} />
-            <Route path="/settings" element={<Settings />} />
+            <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
             <Route path="/search" element={<Search />} />
             <Route path="/discover" element={<Discover />} />
             <Route path="/movies" element={<Discover type="movie" />} />
@@ -77,6 +86,29 @@ function App() {
             <Route path="/users" element={<UserSearch />} />
             <Route path="/user/:userId" element={<UserProfile />} />
             <Route path="/u/:username" element={<UserProfileByUsername />} />
+            
+            {/* Protected Routes - require authentication */}
+            <Route path="/profile" element={
+              <ProtectedRoute user={user} loading={loading}>
+                <Profile />
+              </ProtectedRoute>
+            } />
+            <Route path="/lists" element={
+              <ProtectedRoute user={user} loading={loading}>
+                <Profile />
+              </ProtectedRoute>
+            } />
+            <Route path="/list/:listId" element={
+              <ProtectedRoute user={user} loading={loading}>
+                <CustomListDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute user={user} loading={loading}>
+                <Settings />
+              </ProtectedRoute>
+            } />
+            
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

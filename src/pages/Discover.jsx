@@ -417,7 +417,7 @@ const Discover = ({ type = 'movie' }) => {
   // Modal açma fonksiyonu
   const openAddModal = (item, itemType) => {
     if (!auth.currentUser) {
-      showToast("Lütfen önce giriş yapın!", "warning");
+      navigate('/login');
       return;
     }
     
