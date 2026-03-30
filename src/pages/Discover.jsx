@@ -6,7 +6,7 @@ import MediaCard from '../components/MediaCard';
 import AddToListModal from '../components/AddToListModal';
 import { showToast } from '../components/Toast';
 import { fetchWithEnglishTitles, getTitle, API_KEY, fetchTvEpisodeCount } from '../utils/tmdbUtils';
-import { FaFire, FaStar, FaPlay, FaCalendar, FaFilter, FaSortAmountDown, FaTimes, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaFire, FaStar, FaPlay, FaCalendar, FaFilter, FaSortAmountDown, FaTimes, FaChevronDown, FaChevronUp, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 // Genre mappings for TMDB API
 const MOVIE_GENRES = [
@@ -116,14 +116,14 @@ const Discover = ({ type = 'movie' }) => {
   
   // Filter state
   const [filters, setFilters] = useState(getDefaultFilters());
-  const [filtersExpanded, setFiltersExpanded] = useState(true);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [filtersActive, setFiltersActive] = useState(false);
   
-  // Sections for when no filters are active (home view)
-  const [trending, setTrending] = useState([]);
-  const [popular, setPopular] = useState([]);
-  const [topRated, setTopRated] = useState([]);
-  const [upcoming, setUpcoming] = useState([]);
+  // Sections for when no filters are active (home view) - each with own items and page
+  const [trendingData, setTrendingData] = useState({ items: [], page: 1, hasMore: true, loading: false });
+  const [popularData, setPopularData] = useState({ items: [], page: 1, hasMore: true, loading: false });
+  const [topRatedData, setTopRatedData] = useState({ items: [], page: 1, hasMore: true, loading: false });
+  const [upcomingData, setUpcomingData] = useState({ items: [], page: 1, hasMore: true, loading: false });
   
   // Modal state
   const [showAddModal, setShowAddModal] = useState(false);
@@ -212,6 +212,10 @@ const Discover = ({ type = 'movie' }) => {
   }, [setSearchParams]);
 
   // BUG 1 FIX: Infinite scroll with IntersectionObserver
+  // Store current page in a ref to avoid stale closure issues
+  const currentPageRef = useRef(currentPage);
+  currentPageRef.current = currentPage;
+  
   useEffect(() => {
     if (!filtersActive || !sentinelRef.current) return;
     
@@ -224,7 +228,8 @@ const Discover = ({ type = 'movie' }) => {
       (entries) => {
         const entry = entries[0];
         if (entry.isIntersecting && hasMore && !loadingMore && !loading) {
-          fetchFilteredResults(currentPage + 1, false);
+          // Use ref to get current page value to avoid stale closure
+          fetchFilteredResults(currentPageRef.current + 1, false);
         }
       },
       { rootMargin: '200px' }
@@ -237,28 +242,57 @@ const Discover = ({ type = 'movie' }) => {
         observerRef.current.disconnect();
       }
     };
-  }, [filtersActive, hasMore, loadingMore, loading, currentPage]);
+  }, [filtersActive, hasMore, loadingMore, loading]);
 
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      const [trendingData, popularData, topRatedData, upcomingData] = await Promise.all([
-        fetchWithEnglishTitles(`https://api.themoviedb.org/3/trending/${mediaType}/week`),
-        fetchWithEnglishTitles(`https://api.themoviedb.org/3/${mediaType}/popular`),
-        fetchWithEnglishTitles(`https://api.themoviedb.org/3/${mediaType}/top_rated`),
+      const [trendingRes, popularRes, topRatedRes, upcomingRes] = await Promise.all([
+        fetchWithEnglishTitles(`https://api.themoviedb.org/3/trending/${mediaType}/week`, { page: 1 }),
+        fetchWithEnglishTitles(`https://api.themoviedb.org/3/${mediaType}/popular`, { page: 1 }),
+        fetchWithEnglishTitles(`https://api.themoviedb.org/3/${mediaType}/top_rated`, { page: 1 }),
         mediaType === 'movie' 
-          ? fetchWithEnglishTitles(`https://api.themoviedb.org/3/movie/upcoming`)
-          : fetchWithEnglishTitles(`https://api.themoviedb.org/3/tv/on_the_air`)
+          ? fetchWithEnglishTitles(`https://api.themoviedb.org/3/movie/upcoming`, { page: 1 })
+          : fetchWithEnglishTitles(`https://api.themoviedb.org/3/tv/on_the_air`, { page: 1 })
       ]);
 
-      setTrending(trendingData.results.slice(0, 10));
-      setPopular(popularData.results.slice(0, 10));
-      setTopRated(topRatedData.results.slice(0, 10));
-      setUpcoming(upcomingData.results.slice(0, 10));
+      setTrendingData({ items: trendingRes.results, page: 1, hasMore: trendingRes.total_pages > 1, loading: false });
+      setPopularData({ items: popularRes.results, page: 1, hasMore: popularRes.total_pages > 1, loading: false });
+      setTopRatedData({ items: topRatedRes.results, page: 1, hasMore: topRatedRes.total_pages > 1, loading: false });
+      setUpcomingData({ items: upcomingRes.results, page: 1, hasMore: upcomingRes.total_pages > 1, loading: false });
     } catch (error) {
       console.error("Veri çekme hatası:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch more items for a specific category row
+  const fetchMoreForCategory = async (category) => {
+    const categoryMap = {
+      trending: { data: trendingData, setData: setTrendingData, endpoint: `https://api.themoviedb.org/3/trending/${mediaType}/week` },
+      popular: { data: popularData, setData: setPopularData, endpoint: `https://api.themoviedb.org/3/${mediaType}/popular` },
+      topRated: { data: topRatedData, setData: setTopRatedData, endpoint: `https://api.themoviedb.org/3/${mediaType}/top_rated` },
+      upcoming: { data: upcomingData, setData: setUpcomingData, endpoint: mediaType === 'movie' ? `https://api.themoviedb.org/3/movie/upcoming` : `https://api.themoviedb.org/3/tv/on_the_air` }
+    };
+
+    const { data, setData, endpoint } = categoryMap[category];
+    if (!data.hasMore || data.loading) return;
+
+    setData(prev => ({ ...prev, loading: true }));
+
+    try {
+      const nextPage = data.page + 1;
+      const response = await fetchWithEnglishTitles(endpoint, { page: nextPage });
+      setData(prev => ({
+        items: [...prev.items, ...response.results],
+        page: nextPage,
+        hasMore: nextPage < response.total_pages,
+        loading: false
+      }));
+    } catch (error) {
+      console.error(`${category} daha fazla yükleme hatası:`, error);
+      setData(prev => ({ ...prev, loading: false }));
     }
   };
 
@@ -497,22 +531,102 @@ const Discover = ({ type = 'movie' }) => {
     }
   };
 
-  const MediaSection = ({ title, icon, items }) => (
-    <section className="media-section">
-      <h2>{icon} {title}</h2>
-      <div className="media-row">
-        {items.map(item => (
-          <MediaCard
-            key={item.id}
-            item={item}
-            type={mediaType}
-            onAddToList={openAddModal}
-            isInList={isInList(item.id)}
-          />
-        ))}
-      </div>
-    </section>
-  );
+  // FIX 5: Infinite Horizontal Row with arrow navigation
+  const InfiniteHorizontalRow = ({ title, icon, data, category }) => {
+    const rowRef = useRef(null);
+    const [scrollPosition, setScrollPosition] = useState(0);
+    const [maxScroll, setMaxScroll] = useState(0);
+    const SCROLL_AMOUNT = 800; // pixels to scroll per click
+    const FETCH_THRESHOLD = 6; // fetch more when fewer than 6 items remain unseen
+
+    useEffect(() => {
+      const updateMaxScroll = () => {
+        if (rowRef.current) {
+          setMaxScroll(rowRef.current.scrollWidth - rowRef.current.clientWidth);
+        }
+      };
+      updateMaxScroll();
+      window.addEventListener('resize', updateMaxScroll);
+      return () => window.removeEventListener('resize', updateMaxScroll);
+    }, [data.items.length]);
+
+    const handleScroll = () => {
+      if (rowRef.current) {
+        setScrollPosition(rowRef.current.scrollLeft);
+      }
+    };
+
+    const scrollLeft = () => {
+      if (rowRef.current) {
+        rowRef.current.scrollBy({ left: -SCROLL_AMOUNT, behavior: 'smooth' });
+      }
+    };
+
+    const scrollRight = () => {
+      if (rowRef.current) {
+        rowRef.current.scrollBy({ left: SCROLL_AMOUNT, behavior: 'smooth' });
+        
+        // Check if we need to fetch more items
+        const cardWidth = 180; // approximate card width including margin
+        const visibleCards = Math.floor(rowRef.current.clientWidth / cardWidth);
+        const currentIndex = Math.floor((rowRef.current.scrollLeft + SCROLL_AMOUNT) / cardWidth);
+        const remainingCards = data.items.length - currentIndex - visibleCards;
+        
+        if (remainingCards < FETCH_THRESHOLD && data.hasMore && !data.loading) {
+          fetchMoreForCategory(category);
+        }
+      }
+    };
+
+    const canScrollLeft = scrollPosition > 0;
+    const canScrollRight = scrollPosition < maxScroll || data.hasMore;
+
+    return (
+      <section className="media-section">
+        <h2>{icon} {title}</h2>
+        <div className="horizontal-row-container">
+          {canScrollLeft && (
+            <button 
+              className="row-arrow row-arrow-left"
+              onClick={scrollLeft}
+              aria-label="Sola kaydır"
+            >
+              <FaChevronLeft />
+            </button>
+          )}
+          <div 
+            className="media-row" 
+            ref={rowRef}
+            onScroll={handleScroll}
+          >
+            {data.items.map((item, index) => (
+              <MediaCard
+                key={`${item.id}-${index}`}
+                item={item}
+                type={mediaType}
+                onAddToList={openAddModal}
+                isInList={isInList(item.id)}
+              />
+            ))}
+            {data.loading && (
+              <div className="row-loading-indicator">
+                <div className="loader-small"></div>
+              </div>
+            )}
+          </div>
+          {canScrollRight && (
+            <button 
+              className="row-arrow row-arrow-right"
+              onClick={scrollRight}
+              aria-label="Sağa kaydır"
+            >
+              <FaChevronRight />
+            </button>
+          )}
+        </div>
+      </section>
+    );
+  };
 
   if (loading && !loadingMore) {
     return (
@@ -748,17 +862,15 @@ const Discover = ({ type = 'movie' }) => {
                 ))}
               </div>
               
-              {/* BUG 1 FIX: Infinite scroll sentinel */}
-              {hasMore && (
-                <div ref={sentinelRef} className="scroll-sentinel">
-                  {loadingMore && (
-                    <div className="loading-more">
-                      <div className="loader-small"></div>
-                      <span>Daha fazla yükleniyor...</span>
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* BUG 1 FIX: Infinite scroll sentinel - always render when filters active */}
+              <div ref={sentinelRef} className="scroll-sentinel" style={{ minHeight: '20px' }}>
+                {loadingMore && (
+                  <div className="loading-more">
+                    <div className="loader-small"></div>
+                    <span>Daha fazla yükleniyor...</span>
+                  </div>
+                )}
+              </div>
               
               {!hasMore && results.length > 0 && (
                 <div className="end-of-results">
@@ -778,25 +890,29 @@ const Discover = ({ type = 'movie' }) => {
       {/* Default View (Sections) - when no filters active */}
       {!filtersActive && (
         <>
-          <MediaSection 
+          <InfiniteHorizontalRow 
             title="Bu Hafta Trend" 
             icon={<FaFire className="section-icon trend" />} 
-            items={trending} 
+            data={trendingData}
+            category="trending"
           />
-          <MediaSection 
+          <InfiniteHorizontalRow 
             title="Popüler" 
             icon={<FaPlay className="section-icon popular" />} 
-            items={popular} 
+            data={popularData}
+            category="popular"
           />
-          <MediaSection 
+          <InfiniteHorizontalRow 
             title="En Çok Beğenilen" 
             icon={<FaStar className="section-icon top" />} 
-            items={topRated} 
+            data={topRatedData}
+            category="topRated"
           />
-          <MediaSection 
+          <InfiniteHorizontalRow 
             title={mediaType === 'movie' ? 'Yakında' : 'Yayında'} 
             icon={<FaCalendar className="section-icon upcoming" />} 
-            items={upcoming} 
+            data={upcomingData}
+            category="upcoming"
           />
         </>
       )}

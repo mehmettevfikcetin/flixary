@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { auth } from '../firebase';
-import { FaSearch, FaUser, FaFilm, FaTv, FaHome, FaBars, FaTimes, FaCompass, FaSignOutAlt, FaCog, FaUserFriends } from 'react-icons/fa';
+import { FaSearch, FaUser, FaFilm, FaTv, FaHome, FaBars, FaTimes, FaSignOutAlt, FaCog, FaUserFriends } from 'react-icons/fa';
 
 const Navbar = ({ user }) => {
   const [searchKey, setSearchKey] = useState('');
@@ -94,9 +94,6 @@ const Navbar = ({ user }) => {
             <Link to="/" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
               <FaHome /> Ana Sayfa
             </Link>
-            <Link to="/discover" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
-              <FaCompass /> Keşfet
-            </Link>
             <Link to="/movies" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>
               <FaFilm /> Filmler
             </Link>
@@ -148,9 +145,6 @@ const Navbar = ({ user }) => {
             <div className="nav-links">
               <Link to="/" className="nav-link">
                 <FaHome /> <span>Ana Sayfa</span>
-              </Link>
-              <Link to="/discover" className="nav-link">
-                <FaCompass /> <span>Keşfet</span>
               </Link>
               <Link to="/movies" className="nav-link">
                 <FaFilm /> <span>Filmler</span>
