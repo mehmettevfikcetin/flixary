@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { db, auth } from './firebase';
 import { collection, query, where, onSnapshot, addDoc, doc, updateDoc, arrayUnion, increment } from 'firebase/firestore';
@@ -11,8 +11,201 @@ import { FaFire, FaStar, FaFilm, FaTv, FaArrowRight, FaClock, FaChartLine, FaPla
 const IMAGE_PATH = "https://image.tmdb.org/t/p/w500";
 const BACKDROP_PATH = "https://image.tmdb.org/t/p/original";
 
-// FIX 2: TMDB enforces a hard limit of 500 pages
+// TMDB enforces a hard limit of 500 pages
 const TMDB_MAX_PAGES = 500;
+
+/**
+ * InfiniteHorizontalRow - EXTRACTED AND MEMOIZED COMPONENT
+ * 
+ * CRITICAL: This component MUST be defined OUTSIDE the Home component to prevent
+ * unmounting/remounting on every Home re-render. Inner function components cause
+ * React to lose component identity, destroying all internal state including scroll
+ * position and loaded items.
+ * 
+ * This was the ROOT CAUSE of the page reload/reset bug.
+ */
+const InfiniteHorizontalRow = memo(function InfiniteHorizontalRow({
+  rowKey,
+  title,
+  icon,
+  data,
+  onFetchMore,
+  mediaType,
+  seeAllLink,
+  onAddToList,
+  isInList
+}) {
+  // Scroll container ref - stable across renders, never stored in state
+  const rowRef = useRef(null);
+  
+  // Store onFetchMore in a ref to avoid dependency issues and re-renders
+  const onFetchMoreRef = useRef(onFetchMore);
+  useEffect(() => {
+    onFetchMoreRef.current = onFetchMore;
+  }, [onFetchMore]);
+  
+  // Track scroll state for button visibility
+  const [scrollState, setScrollState] = useState({ canScrollLeft: false, canScrollRight: true });
+  
+  const SCROLL_AMOUNT = 800;
+  const FETCH_THRESHOLD = 6;
+
+  // Update scroll capabilities - uses useCallback for stability
+  const updateScrollState = useCallback(() => {
+    if (!rowRef.current) return;
+    
+    const container = rowRef.current;
+    const maxScroll = container.scrollWidth - container.clientWidth;
+    const currentScroll = container.scrollLeft;
+    
+    // Check if we can fetch more based on pagination limits
+    const hasMoreToFetch = data.hasMore && 
+                           data.page < data.totalPages && 
+                           data.page < TMDB_MAX_PAGES;
+    
+    setScrollState({
+      canScrollLeft: currentScroll > 5, // Small threshold to avoid floating point issues
+      canScrollRight: currentScroll < maxScroll - 5 || hasMoreToFetch
+    });
+  }, [data.hasMore, data.page, data.totalPages]);
+
+  // Update scroll state when items change or on resize
+  useEffect(() => {
+    updateScrollState();
+    window.addEventListener('resize', updateScrollState);
+    return () => window.removeEventListener('resize', updateScrollState);
+  }, [updateScrollState, data.items.length]);
+
+  // Handle scroll events - updates state for button visibility
+  const handleScroll = useCallback(() => {
+    updateScrollState();
+  }, [updateScrollState]);
+
+  // Left scroll handler with mandatory event prevention
+  const handleScrollLeft = useCallback((e) => {
+    // MANDATORY - prevent any form submission or navigation
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Use scrollBy for simple, stable scrolling
+    if (rowRef.current) {
+      rowRef.current.scrollBy({ left: -SCROLL_AMOUNT, behavior: 'smooth' });
+    }
+  }, []);
+
+  // Right scroll handler with event prevention and fetch logic
+  // Uses refs for data values to avoid callback identity changes triggering re-renders
+  const dataRef = useRef(data);
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
+  
+  const handleScrollRight = useCallback((e) => {
+    // MANDATORY - prevent any form submission or navigation
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!rowRef.current) return;
+    
+    const container = rowRef.current;
+    
+    // Use scrollBy for simple, stable scrolling
+    container.scrollBy({ left: SCROLL_AMOUNT, behavior: 'smooth' });
+    
+    // Read current data from ref to avoid stale closure issues
+    const currentData = dataRef.current;
+    
+    // Check if we need to fetch more items
+    const cardWidth = 180;
+    const visibleCards = Math.floor(container.clientWidth / cardWidth);
+    const currentIndex = Math.floor((container.scrollLeft + SCROLL_AMOUNT) / cardWidth);
+    const remainingCards = currentData.items.length - currentIndex - visibleCards;
+    
+    // Only fetch if within TMDB pagination limits
+    const canFetchMore = currentData.hasMore && 
+                         !currentData.loading && 
+                         currentData.page < currentData.totalPages && 
+                         currentData.page < TMDB_MAX_PAGES;
+    
+    if (remainingCards < FETCH_THRESHOLD && canFetchMore) {
+      onFetchMoreRef.current();
+    }
+  }, []); // Empty deps - uses refs for all dynamic values
+
+  // Calculate if we've reached the pagination boundary
+  const isAtPaginationLimit = data.page >= data.totalPages || data.page >= TMDB_MAX_PAGES;
+
+  return (
+    <section className="content-section">
+      <div className="section-header">
+        <h2>{icon} {title}</h2>
+        {seeAllLink && (
+          <Link to={seeAllLink} className="see-all">
+            Tümünü Gör <FaArrowRight />
+          </Link>
+        )}
+      </div>
+      <div className="horizontal-row-container">
+        {scrollState.canScrollLeft && (
+          <button 
+            type="button"
+            className="row-arrow row-arrow-left"
+            onClick={handleScrollLeft}
+            aria-label="Sola kaydır"
+          >
+            <FaChevronLeft />
+          </button>
+        )}
+        <div 
+          className="media-row" 
+          ref={rowRef}
+          onScroll={handleScroll}
+        >
+          {data.items.map((item, index) => (
+            <MediaCard
+              key={`${rowKey}-${item.id}-${index}`}
+              item={item}
+              type={mediaType}
+              onAddToList={onAddToList}
+              isInList={isInList(item.id, mediaType)}
+            />
+          ))}
+          {data.loading && (
+            <div className="row-loading-indicator">
+              <div className="loader-small"></div>
+            </div>
+          )}
+        </div>
+        {scrollState.canScrollRight && (
+          <button 
+            type="button"
+            className="row-arrow row-arrow-right"
+            onClick={handleScrollRight}
+            disabled={isAtPaginationLimit}
+            style={isAtPaginationLimit ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+            aria-label="Sağa kaydır"
+          >
+            <FaChevronRight />
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison for memo - only re-render when data actually changes
+  // This prevents re-renders caused by callback reference changes
+  return (
+    prevProps.rowKey === nextProps.rowKey &&
+    prevProps.title === nextProps.title &&
+    prevProps.mediaType === nextProps.mediaType &&
+    prevProps.seeAllLink === nextProps.seeAllLink &&
+    prevProps.data.items === nextProps.data.items &&
+    prevProps.data.page === nextProps.data.page &&
+    prevProps.data.totalPages === nextProps.data.totalPages &&
+    prevProps.data.hasMore === nextProps.data.hasMore &&
+    prevProps.data.loading === nextProps.data.loading
+  );
+});
 
 const Home = () => {
   const navigate = useNavigate();
@@ -89,9 +282,12 @@ const Home = () => {
   };
 
   // FIX 2 & 4: Function to fetch more items with pagination guards and safe error handling
-  const fetchMoreForRow = async (endpoint, data, setData) => {
-    // FIX 2: Guard against fetching beyond TMDB limits
-    // Check if already loading, no more pages, or at TMDB's hard 500-page limit
+  // Uses functional setState to always read latest state, avoiding stale closures
+  const fetchMoreForRow = useCallback(async (endpoint, getDataRef, setData) => {
+    // Get current data from ref to ensure fresh state
+    const data = getDataRef.current;
+    
+    // Guard against fetching beyond TMDB limits
     if (data.loading) return;
     if (!data.hasMore) return;
     if (data.page >= data.totalPages) return;
@@ -103,7 +299,7 @@ const Home = () => {
       const nextPage = data.page + 1;
       const response = await fetchWithEnglishTitles(endpoint, { page: nextPage });
       
-      // FIX 2: Calculate if there are more pages, respecting TMDB's 500 limit
+      // Calculate if there are more pages, respecting TMDB's 500 limit
       const cappedTotalPages = Math.min(response.total_pages || 1, TMDB_MAX_PAGES);
       const canFetchMore = nextPage < cappedTotalPages;
       
@@ -115,17 +311,14 @@ const Home = () => {
         loading: false
       }));
     } catch (error) {
-      // FIX 4: Silent error handling - NEVER reset items or page state
-      // Only log the error and release the loading lock
+      // Silent error handling - NEVER reset items or page state
       if (error.name === 'AbortError' || error.name === 'CanceledError') {
-        // Silently ignore abort errors - they're expected during rapid navigation
         return;
       }
-      console.error("[Flixary] Carousel fetch failed:", error);
-      // Only release loading lock, preserve all existing data
+      console.error("[Flixary] Carousel fetch error:", error);
       setData(prev => ({ ...prev, loading: false }));
     }
-  };
+  }, []);
 
   const fetchUserLists = () => {
     if (!auth.currentUser) return () => {};
@@ -246,146 +439,63 @@ const Home = () => {
     }
   };
 
-  // FIX 1, 2, 3: Reusable Infinite Horizontal Row with proper button behavior, pagination limits, and stable keys
-  const InfiniteHorizontalRow = ({ rowKey, title, icon, data, setData, endpoint, mediaType, seeAllLink }) => {
-    // FIX 3: Use ref for scroll position to survive re-renders without resetting
-    const rowRef = useRef(null);
-    const scrollPositionRef = useRef(0);
-    const [scrollState, setScrollState] = useState({ canScrollLeft: false, canScrollRight: true });
-    const SCROLL_AMOUNT = 800;
-    const FETCH_THRESHOLD = 6;
+  // Stable callback for isInList check (passed to memoized component)
+  const isInListCallback = useCallback((tmdbId, mediaType) => {
+    return userList.some(item => item.tmdbId === tmdbId && item.mediaType === mediaType);
+  }, [userList]);
 
-    // Update scroll capabilities when items change
-    useEffect(() => {
-      const updateScrollState = () => {
-        if (rowRef.current) {
-          const maxScroll = rowRef.current.scrollWidth - rowRef.current.clientWidth;
-          const currentScroll = rowRef.current.scrollLeft;
-          // FIX 2: canScrollRight also checks if we've hit TMDB limits
-          const hasMoreToFetch = data.hasMore && data.page < data.totalPages && data.page < TMDB_MAX_PAGES;
-          setScrollState({
-            canScrollLeft: currentScroll > 0,
-            canScrollRight: currentScroll < maxScroll || hasMoreToFetch
-          });
-        }
-      };
-      updateScrollState();
-      window.addEventListener('resize', updateScrollState);
-      return () => window.removeEventListener('resize', updateScrollState);
-    }, [data.items.length, data.hasMore, data.page, data.totalPages]);
+  // Refs to hold current data state - allows stable callbacks that read fresh data
+  const trendingMoviesRef = useRef(trendingMoviesData);
+  const trendingSeriesRef = useRef(trendingSeriesData);
+  const popularMoviesRef = useRef(popularMoviesData);
+  const popularSeriesRef = useRef(popularSeriesData);
+  const topRatedMoviesRef = useRef(topRatedMoviesData);
+  const topRatedSeriesRef = useRef(topRatedSeriesData);
+  const upcomingMoviesRef = useRef(upcomingMoviesData);
+  const onAirSeriesRef = useRef(onAirSeriesData);
 
-    // FIX 3: Track scroll position in ref to preserve across re-renders
-    const handleScroll = () => {
-      if (rowRef.current) {
-        scrollPositionRef.current = rowRef.current.scrollLeft;
-        const maxScroll = rowRef.current.scrollWidth - rowRef.current.clientWidth;
-        const hasMoreToFetch = data.hasMore && data.page < data.totalPages && data.page < TMDB_MAX_PAGES;
-        setScrollState({
-          canScrollLeft: scrollPositionRef.current > 0,
-          canScrollRight: scrollPositionRef.current < maxScroll || hasMoreToFetch
-        });
-      }
-    };
+  // Keep refs in sync with state
+  useEffect(() => { trendingMoviesRef.current = trendingMoviesData; }, [trendingMoviesData]);
+  useEffect(() => { trendingSeriesRef.current = trendingSeriesData; }, [trendingSeriesData]);
+  useEffect(() => { popularMoviesRef.current = popularMoviesData; }, [popularMoviesData]);
+  useEffect(() => { popularSeriesRef.current = popularSeriesData; }, [popularSeriesData]);
+  useEffect(() => { topRatedMoviesRef.current = topRatedMoviesData; }, [topRatedMoviesData]);
+  useEffect(() => { topRatedSeriesRef.current = topRatedSeriesData; }, [topRatedSeriesData]);
+  useEffect(() => { upcomingMoviesRef.current = upcomingMoviesData; }, [upcomingMoviesData]);
+  useEffect(() => { onAirSeriesRef.current = onAirSeriesData; }, [onAirSeriesData]);
 
-    // FIX 1: Proper button handler with complete event prevention
-    const scrollLeft = (e) => {
-      if (e) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-      if (rowRef.current) {
-        rowRef.current.scrollBy({ left: -SCROLL_AMOUNT, behavior: 'smooth' });
-      }
-    };
+  // Stable fetch callbacks - never change identity, use refs to access current data
+  const fetchMoreTrendingMovies = useCallback(() => {
+    fetchMoreForRow('https://api.themoviedb.org/3/trending/movie/day', trendingMoviesRef, setTrendingMoviesData);
+  }, [fetchMoreForRow]);
 
-    // FIX 1 & 2: Proper button handler with event prevention and pagination guard
-    const scrollRight = (e) => {
-      if (e) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-      if (rowRef.current) {
-        rowRef.current.scrollBy({ left: SCROLL_AMOUNT, behavior: 'smooth' });
-        
-        // Check if we need to fetch more items
-        const cardWidth = 180;
-        const visibleCards = Math.floor(rowRef.current.clientWidth / cardWidth);
-        const currentIndex = Math.floor((rowRef.current.scrollLeft + SCROLL_AMOUNT) / cardWidth);
-        const remainingCards = data.items.length - currentIndex - visibleCards;
-        
-        // FIX 2: Only fetch if within TMDB pagination limits
-        const canFetchMore = data.hasMore && 
-                            !data.loading && 
-                            data.page < data.totalPages && 
-                            data.page < TMDB_MAX_PAGES;
-        
-        if (remainingCards < FETCH_THRESHOLD && canFetchMore) {
-          fetchMoreForRow(endpoint, data, setData);
-        }
-      }
-    };
+  const fetchMoreTrendingSeries = useCallback(() => {
+    fetchMoreForRow('https://api.themoviedb.org/3/trending/tv/day', trendingSeriesRef, setTrendingSeriesData);
+  }, [fetchMoreForRow]);
 
-    // FIX 2: Determine if Next button should be disabled (at pagination boundary)
-    const isAtPaginationLimit = data.page >= data.totalPages || data.page >= TMDB_MAX_PAGES;
-    const nextButtonDisabled = isAtPaginationLimit && scrollPositionRef.current >= (rowRef.current?.scrollWidth - rowRef.current?.clientWidth || 0);
+  const fetchMorePopularMovies = useCallback(() => {
+    fetchMoreForRow('https://api.themoviedb.org/3/movie/popular', popularMoviesRef, setPopularMoviesData);
+  }, [fetchMoreForRow]);
 
-    return (
-      <section className="content-section">
-        <div className="section-header">
-          <h2>{icon} {title}</h2>
-          {seeAllLink && (
-            <Link to={seeAllLink} className="see-all">
-              Tümünü Gör <FaArrowRight />
-            </Link>
-          )}
-        </div>
-        <div className="horizontal-row-container">
-          {scrollState.canScrollLeft && (
-            <button 
-              type="button"
-              className="row-arrow row-arrow-left"
-              onClick={scrollLeft}
-              aria-label="Sola kaydır"
-            >
-              <FaChevronLeft />
-            </button>
-          )}
-          <div 
-            className="media-row" 
-            ref={rowRef}
-            onScroll={handleScroll}
-          >
-            {/* FIX 3: Stable key pattern using rowKey-itemId-index to prevent remounting */}
-            {data.items.map((item, index) => (
-              <MediaCard
-                key={`${rowKey}-${item.id}-${index}`}
-                item={item}
-                type={mediaType}
-                onAddToList={openAddModal}
-                isInList={isInList(item.id, mediaType)}
-              />
-            ))}
-            {data.loading && (
-              <div className="row-loading-indicator">
-                <div className="loader-small"></div>
-              </div>
-            )}
-          </div>
-          {/* FIX 2: Hide/disable Next button when at pagination boundary */}
-          {scrollState.canScrollRight && !nextButtonDisabled && (
-            <button 
-              type="button"
-              className="row-arrow row-arrow-right"
-              onClick={scrollRight}
-              aria-label="Sağa kaydır"
-            >
-              <FaChevronRight />
-            </button>
-          )}
-        </div>
-      </section>
-    );
-  };
+  const fetchMorePopularSeries = useCallback(() => {
+    fetchMoreForRow('https://api.themoviedb.org/3/tv/popular', popularSeriesRef, setPopularSeriesData);
+  }, [fetchMoreForRow]);
+
+  const fetchMoreTopRatedMovies = useCallback(() => {
+    fetchMoreForRow('https://api.themoviedb.org/3/movie/top_rated', topRatedMoviesRef, setTopRatedMoviesData);
+  }, [fetchMoreForRow]);
+
+  const fetchMoreTopRatedSeries = useCallback(() => {
+    fetchMoreForRow('https://api.themoviedb.org/3/tv/top_rated', topRatedSeriesRef, setTopRatedSeriesData);
+  }, [fetchMoreForRow]);
+
+  const fetchMoreUpcomingMovies = useCallback(() => {
+    fetchMoreForRow('https://api.themoviedb.org/3/movie/upcoming', upcomingMoviesRef, setUpcomingMoviesData);
+  }, [fetchMoreForRow]);
+
+  const fetchMoreOnAirSeries = useCallback(() => {
+    fetchMoreForRow('https://api.themoviedb.org/3/tv/on_the_air', onAirSeriesRef, setOnAirSeriesData);
+  }, [fetchMoreForRow]);
 
   if (loading) {
     return (
@@ -516,106 +626,106 @@ const Home = () => {
 
       {/* Trend Filmler */}
       <InfiniteHorizontalRow
-        key="trending-movies"
         rowKey="trending-movies"
         title="Trend Filmler"
         icon={<FaFire className="trend-icon" />}
         data={trendingMoviesData}
-        setData={setTrendingMoviesData}
-        endpoint="https://api.themoviedb.org/3/trending/movie/day"
+        onFetchMore={fetchMoreTrendingMovies}
         mediaType="movie"
         seeAllLink="/movies"
+        onAddToList={openAddModal}
+        isInList={isInListCallback}
       />
 
-      {/* Popular Movies - FIX 3: New row */}
+      {/* Popular Movies */}
       <InfiniteHorizontalRow
-        key="popular-movies"
         rowKey="popular-movies"
         title="Popüler Filmler"
         icon={<FaPlay className="section-icon popular" />}
         data={popularMoviesData}
-        setData={setPopularMoviesData}
-        endpoint="https://api.themoviedb.org/3/movie/popular"
+        onFetchMore={fetchMorePopularMovies}
         mediaType="movie"
         seeAllLink="/movies"
+        onAddToList={openAddModal}
+        isInList={isInListCallback}
       />
 
-      {/* Top Rated Movies - FIX 3: New row */}
+      {/* Top Rated Movies */}
       <InfiniteHorizontalRow
-        key="top-rated-movies"
         rowKey="top-rated-movies"
         title="En Çok Beğenilen Filmler"
         icon={<FaStar className="section-icon top" />}
         data={topRatedMoviesData}
-        setData={setTopRatedMoviesData}
-        endpoint="https://api.themoviedb.org/3/movie/top_rated"
+        onFetchMore={fetchMoreTopRatedMovies}
         mediaType="movie"
         seeAllLink="/movies"
+        onAddToList={openAddModal}
+        isInList={isInListCallback}
       />
 
-      {/* Upcoming Movies - FIX 3: New row */}
+      {/* Upcoming Movies */}
       <InfiniteHorizontalRow
-        key="upcoming-movies"
         rowKey="upcoming-movies"
         title="Yakında Vizyonda"
         icon={<FaCalendar className="section-icon upcoming" />}
         data={upcomingMoviesData}
-        setData={setUpcomingMoviesData}
-        endpoint="https://api.themoviedb.org/3/movie/upcoming"
+        onFetchMore={fetchMoreUpcomingMovies}
         mediaType="movie"
         seeAllLink="/movies"
+        onAddToList={openAddModal}
+        isInList={isInListCallback}
       />
 
       {/* Trend Diziler */}
       <InfiniteHorizontalRow
-        key="trending-series"
         rowKey="trending-series"
         title="Trend Diziler"
         icon={<FaFire className="trend-icon" />}
         data={trendingSeriesData}
-        setData={setTrendingSeriesData}
-        endpoint="https://api.themoviedb.org/3/trending/tv/day"
+        onFetchMore={fetchMoreTrendingSeries}
         mediaType="tv"
         seeAllLink="/series"
+        onAddToList={openAddModal}
+        isInList={isInListCallback}
       />
 
-      {/* Popular Series - FIX 3: New row */}
+      {/* Popular Series */}
       <InfiniteHorizontalRow
-        key="popular-series"
         rowKey="popular-series"
         title="Popüler Diziler"
         icon={<FaPlay className="section-icon popular" />}
         data={popularSeriesData}
-        setData={setPopularSeriesData}
-        endpoint="https://api.themoviedb.org/3/tv/popular"
+        onFetchMore={fetchMorePopularSeries}
         mediaType="tv"
         seeAllLink="/series"
+        onAddToList={openAddModal}
+        isInList={isInListCallback}
       />
 
-      {/* Top Rated Series - FIX 3: New row */}
+      {/* Top Rated Series */}
       <InfiniteHorizontalRow
-        key="top-rated-series"
         rowKey="top-rated-series"
         title="En Çok Beğenilen Diziler"
         icon={<FaStar className="section-icon top" />}
         data={topRatedSeriesData}
-        setData={setTopRatedSeriesData}
-        endpoint="https://api.themoviedb.org/3/tv/top_rated"
+        onFetchMore={fetchMoreTopRatedSeries}
         mediaType="tv"
         seeAllLink="/series"
+        onAddToList={openAddModal}
+        isInList={isInListCallback}
       />
 
-      {/* On Air Series - FIX 3: New row */}
+      {/* On Air Series */}
       <InfiniteHorizontalRow
-        key="on-air-series"
         rowKey="on-air-series"
         title="Şu Anda Yayında"
         icon={<FaCalendar className="section-icon upcoming" />}
         data={onAirSeriesData}
-        setData={setOnAirSeriesData}
-        endpoint="https://api.themoviedb.org/3/tv/on_the_air"
+        onFetchMore={fetchMoreOnAirSeries}
         mediaType="tv"
         seeAllLink="/series"
+        onAddToList={openAddModal}
+        isInList={isInListCallback}
       />
 
       {/* Keşfet CTA */}
