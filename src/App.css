@@ -7839,7 +7839,8 @@ html, body {
 }
 
 .detail-actions > *:only-child,
-.detail-actions .btn-trailer {
+.detail-actions .btn-trailer,
+.detail-actions .btn-add-large {
   grid-column: span 2;
 }
 
@@ -7865,7 +7866,8 @@ html, body {
   }
 
   .detail-actions > *:only-child,
-  .detail-actions .btn-trailer {
+  .detail-actions .btn-trailer,
+  .detail-actions .btn-add-large {
     grid-column: span 1;
   }
 }
